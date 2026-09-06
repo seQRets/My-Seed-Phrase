@@ -54,7 +54,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 14 of 14", then "## Verify your download" with the
-   shasum block. Current release: v1.6.4.
+   shasum block. Current release: v1.6.5.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -64,6 +64,9 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    close. Fingerprints are never blurred (identify, can't open). Coming back
    via the back button re-blurs whatever is in the box and wipes the QR —
    nothing is ever erased, because a phrase being copied down must not vanish.
+   A copy saved with File → Save Page As serializes the live DOM (shield
+   class, visible controls) but not the seed, so the page reconciles with the
+   box's actual content at load — an empty box sheds any serialized state.
    Modal layout: fingerprint sits directly under the QR (outside .qrbox, so the
    blur never covers it), the download warning directly under that, then two
    sentences with the longer explanation folded into a <details>. The card is a
@@ -108,7 +111,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 54 checks: drives real Chrome headless, checks
+    node verify.js            # 55 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,

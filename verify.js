@@ -784,6 +784,21 @@ async function guardChecks(browser, base) {
       r.err || JSON.stringify(r));
   await p.setViewport(1280, 900);
 
+  // File → Save Page As serializes the live DOM — the shield class and the
+  // visible controls — but not the seed, so a snapshot saved mid-use used to
+  // wake up smudging its own placeholder text beside an empty box. The page
+  // must heal that state the moment it opens.
+  await p.goto(base + '/snapshot');
+  r = await p.evaluate(`${HELPERS}
+    if(!await wait(()=>document.readyState==='complete')) return {err:'load timeout'};
+    return { healed: !$('in').classList.contains('shield'),
+      wrapCleared: !$('inwrap').classList.contains('on'),
+      controlsHidden: $('inctl').style.display==='none',
+      placeholderCrisp: getComputedStyle($('in'),'::placeholder').textShadow==='none' };`);
+  chk('a copy saved mid-use heals its snapshot state on open', !r.err
+      && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp,
+      r.err || JSON.stringify(r));
+
   await p.close();
 }
 
@@ -851,6 +866,19 @@ async function calibrate(browser, fileUrl) {
     if (req.url.startsWith('/away')) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end('<!doctype html><title>away</title><body>elsewhere');
+    }
+    if (req.url.startsWith('/snapshot')) {
+      // index.html the way File → Save Page As writes it mid-use: the live
+      // DOM's shield class and visible controls serialized in, the seed not
+      return fs.readFile(path.join(ROOT, 'index.html'), 'utf8', (err, s) => {
+        if (err) { res.writeHead(404); return res.end(); }
+        s = s.replace('<textarea id="in"', '<textarea class="shield" id="in"')
+             .replace('<div class="inwrap" id="inwrap">', '<div class="inwrap on" id="inwrap">')
+             .replace('<div class="inctl" id="inctl" style="display:none">',
+                      '<div class="inctl" id="inctl" style="display: flex;">');
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(s);
+      });
     }
     const f = path.join(ROOT, req.url === '/' ? 'index.html' : path.normalize(req.url).replace(/^(\.\.[\/\\])+/, ''));
     fs.readFile(f, (err, data) => {

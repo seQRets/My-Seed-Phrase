@@ -149,6 +149,7 @@
      it without blurring the box, so a shoulder-surfer sees smudges, not words.
      The eye button lifts it. */
   textarea.shield{color:transparent;text-shadow:0 0 .55em var(--muted);caret-color:transparent}
+  textarea.shield::placeholder{text-shadow:none}
   .inwrap{position:relative}
   .inwrap.on textarea{padding-right:7.9rem}
   /* the fingerprint rides inside the box, pinned under the words. Unblurred on
@@ -858,7 +859,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.4 · RUNS OFFLINE</div>
+    <div class="r">v1.6.5 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4125,6 +4126,13 @@ addEventListener("pageshow", e => {
 });
 
 netBadge();
+
+// A copy saved from the browser (File → Save Page As) serializes the live DOM
+// — the shield class, the visible controls — but not the seed itself, so a
+// snapshot saved mid-use wakes up with a smudged placeholder and orphaned
+// buttons beside an empty box. Reconcile with what the box actually holds.
+if ($("in").value.trim()) shieldOn();
+else shieldReset();
 </script>
 </body>
 </html>
