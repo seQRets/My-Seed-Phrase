@@ -32,6 +32,15 @@ const PAGE = path.join(ROOT, 'index.html');
 const SNAP_WORD = 'midnight';
 const SNAP_NOTE = `“${SNAP_WORD}” is word 12 — the completed seed is in the box at the top.`;
 const SNAP_FP = '45618c53';
+// The dice read-out is worked out from the rolls, so it is derived state and
+// scrubs with the rest. The rolls themselves never reach a saved file — a
+// textarea's value is not part of the document — but what they produced does.
+// The sentence has to be one the page BUILDS rather than one it contains: the
+// wording is assembled around ${period} at runtime, so this exact string is
+// nowhere in the source. Planting a phrase that is in the source matches the
+// script tag itself and the check can only ever fail. Asserted below, because
+// that mistake is invisible once made.
+const SNAP_ROLLQ = 'the same 7 rolls repeat over and over';
 const WORDLIST_SHA256 = '2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda';
 // Tripwire. assess() is tuned so genuine random draws almost never trip a
 // warning while every hand-picking pattern is still caught; changing it without
@@ -163,6 +172,23 @@ const SNAP_CHIP = `<div class="w sel"><span>${SNAP_WORD}</span>`
                 + `<span class="i">${IDX.get(SNAP_WORD)}</span></div>`;
 
 // bits -> entropy bytes -> sha256 -> compare the checksum the standard's way
+// Dice vectors. One clean 100-roll sequence whose first 51 rolls are also
+// clean, so the same string exercises both a 12- and a 24-word seed without
+// tripping the page's own roll-quality check and turning these into tests of
+// the warning instead of the maths.
+const ROLLS100 = '6316122265665236562562146265354545666262333213561554411262152314163156124665425312164255413412222533';
+const ROLLS51 = ROLLS100.slice(0, 51);
+
+// Dice -> seed built on Node's crypto, independent of the page: hash the
+// digits, take the leading bytes as entropy, append the checksum they imply.
+function diceMnemonic(rolls, words) {
+  const ent = crypto.createHash('sha256').update(rolls, 'utf8').digest().slice(0, words / 3 * 4);
+  const eb = [...ent].map(b => b.toString(2).padStart(8, '0')).join('');
+  const cs = [...crypto.createHash('sha256').update(ent).digest()]
+    .map(b => b.toString(2).padStart(8, '0')).join('').slice(0, eb.length / 32);
+  return (eb + cs).match(/.{11}/g).map(b => WORDS[parseInt(b, 2)]);
+}
+
 function validate(phrase) {
   const ws = phrase.trim().split(/\s+/), n = ws.length;
   if (![12, 15, 18, 21, 24].includes(n) || ws.some(w => !IDX.has(w))) return false;
@@ -186,6 +212,11 @@ function sourceChecks() {
   chk('word list is 2048 words', WORDS.length === 2048);
   chk('word list is the official BIP-39 English list',
     crypto.createHash('sha256').update(WORDS.join('\n') + '\n').digest('hex') === WORDLIST_SHA256);
+  // a sentinel that appears in the source matches the script tag, not the DOM
+  chk('the snapshot sentinels cannot match the page\'s own source',
+    !SRC.includes(SNAP_ROLLQ) && !SRC.includes(SNAP_NOTE) && !SRC.includes(SNAP_FP)
+    && !SRC.includes(SNAP_CHIP),
+    'a planted value also occurs in index.html, so its scrub check proves nothing');
   chk('no Math.random() anywhere', (SRC.match(/Math\.random\s*\(/g) || []).length === 0);
   const csp = (SRC.match(/http-equiv="Content-Security-Policy"[\s\S]*?content="([^"]+)"/) || [])[1] || '';
   // The favicon needs img-src data:. That is inline, not a fetch. What must never
@@ -250,7 +281,7 @@ async function pageChecks(browser, fileUrl, httpUrl) {
       await wait(()=>$('testsum')&&$('testsum').textContent.trim());
       const el=$('testsum');
       return el ? el.textContent.trim() : 'never finished — the page threw before reporting';`);
-    chk(`its own verification reads 14 of 14, ${label}`, st === '✓ All 14 checks passed', st);
+    chk(`its own verification reads 15 of 15, ${label}`, st === '✓ All 15 checks passed', st);
     const off = p.requests.filter(u => !u.startsWith(url.replace(/\/$/, '')) && !u.startsWith(url));
     chk(`nothing is fetched from anywhere, ${label}`, off.length === 0, off.join(','));
     chk(`no script errors, ${label}`, p.exceptions.length === 0, p.exceptions.join(' | '));
@@ -822,16 +853,177 @@ async function guardChecks(browser, base) {
       // the fingerprint
       wordScrubbed: !doc.includes(${JSON.stringify(SNAP_NOTE)}),
       chipScrubbed: !doc.includes(${JSON.stringify(SNAP_CHIP)}),
+      rollqScrubbed: !doc.includes(${JSON.stringify(SNAP_ROLLQ)}),
+      rollCountScrubbed: !/id="dicecount"[^>]*>73 of 100/.test(doc),
       fpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP)}) };`);
   chk('a copy saved mid-use heals its snapshot state on open', !r.err
       && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp
       && r.endingsHidden && r.gridEmpty && r.statusEmpty && r.noteEmpty
-      && r.meterHidden,
+      && r.meterHidden && r.rollCountScrubbed,
       r.err || JSON.stringify(r));
-  chk('a saved copy sheds its seed word and fingerprint when opened',
-      !r.err && r.wordScrubbed && r.chipScrubbed && r.fpScrubbed,
+  chk('a saved copy sheds its seed word, fingerprint and dice read-out when opened',
+      !r.err && r.wordScrubbed && r.chipScrubbed && r.fpScrubbed && r.rollqScrubbed,
       r.err || `note left: ${!r.wordScrubbed}, chosen chip left: ${!r.chipScrubbed}, `
-             + `fingerprint left: ${!r.fpScrubbed}`);
+             + `fingerprint left: ${!r.fpScrubbed}, dice read-out left: ${!r.rollqScrubbed}`);
+
+  await p.close();
+}
+
+async function diceChecks(browser, base) {
+  console.log('\n--- rolling your own randomness ---');
+  const p = await openPage(browser, base + '/index.html');
+  const want12 = diceMnemonic(ROLLS51, 12).join(' ');
+  const want24 = diceMnemonic(ROLLS100, 24).join(' ');
+  let r;
+
+  // 1. the maths, against an implementation that shares no code with the page
+  r = await p.evaluate(`${HELPERS}
+    const g = async (rolls, target) => {
+      $('dicepath').open = true;
+      $('rolls').value = ''; $('rolls').dispatchEvent(new Event('input'));
+      [...document.querySelectorAll('#dicesizes .size')]
+        .find(b => +b.dataset.w === target).click();
+      $('rolls').value = rolls; $('rolls').dispatchEvent(new Event('input'));
+      if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
+      $('dicego').click();
+      if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === target)) return { err: 'no seed' };
+      return { seed: $('in').value.trim(), label: $('dicego').textContent };
+    };
+    const a = await g(${JSON.stringify(ROLLS51)}, 12);
+    const b = await g(${JSON.stringify(ROLLS100)}, 24);
+    return { a, b };`);
+  chk('dice make the seed an independent implementation makes, at 12 and 24 words',
+      !r.a.err && !r.b.err && r.a.seed === want12 && r.b.seed === want24,
+      r.a.err || r.b.err || `12w ${r.a.seed === want12}, 24w ${r.b.seed === want24}`);
+
+  // 2. rolls you have not made cannot buy a longer seed
+  r = await p.evaluate(`${HELPERS}
+    $('dicepath').open = true;
+    [...document.querySelectorAll('#dicesizes .size')].find(b => b.dataset.w === '24').click();
+    const at = n => { $('rolls').value = ${JSON.stringify(ROLLS100)}.slice(0, n);
+      $('rolls').dispatchEvent(new Event('input'));
+      return { label: $('dicego').textContent, off: $('dicego').disabled,
+               ready: [...document.querySelectorAll('#dicesizes .size.ready')].map(b => b.dataset.w) } };
+    const sizes = { r49: at(49), r51: at(51), r75: at(75), r100: at(100) };
+    // and the press must honour the label: 51 rolls with 24 words asked for
+    // still makes 12, or the gate is only cosmetic
+    // clear first: an earlier check leaves a 24-word seed in the box, and
+    // waiting for "more than one word" would read that instead of this press
+    $('clr').click();
+    at(51);
+    $('dicego').click();
+    await wait(() => $('in').value.trim().split(/[ ]+/).filter(Boolean).length >= 12);
+    sizes.madeAt51 = $('in').value.trim().split(/[ ]+/).filter(Boolean).length;
+    return sizes;`);
+  chk('the rolls you have decide the sizes offered, never the size you asked for',
+      r.r49.off && r.r49.ready.length === 0
+      && !r.r51.off && r.r51.label === 'Make a 12-word seed' && r.r51.ready.join() === '12'
+      && r.r75.label === 'Make a 18-word seed' && r.r75.ready.join() === '12,15,18'
+      && r.r100.label === 'Make a 24-word seed' && r.r100.ready.join() === '12,15,18,21,24'
+      && r.madeAt51 === 12,
+      JSON.stringify(r));
+
+  // 3. it is a finished seed, born hidden, with no ending left to choose
+  r = await p.evaluate(`${HELPERS}
+    $('clr').click();
+    $('dicepath').open = true;
+    [...document.querySelectorAll('#dicesizes .size')].find(b => b.dataset.w === '12').click();
+    $('rolls').value = ${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
+    if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
+    $('dicego').click();
+    if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === 12)) return { err: 'no seed' };
+    await wait(() => $('infpv').textContent !== '…');
+    return { hidden: $('in').classList.contains('shield'),
+             verified: $('in').classList.contains('okseed'),
+             endingsHidden: $('out').style.display === 'none',
+             chips: document.querySelectorAll('#grid .w').length,
+             fp: $('infpv').textContent, qr: $('inqr').style.display !== 'none' };`);
+  chk('a dice seed arrives hidden and complete, with no ending left to pick', !r.err
+      && r.hidden && r.verified && r.endingsHidden && r.chips === 0 && r.qr
+      && /^[0-9a-f]{8}$/.test(r.fp), r.err || JSON.stringify(r));
+
+  // 4. the gate: patterned rolls write nothing on the first press
+  r = await p.evaluate(`${HELPERS}
+    $('clr').click();
+    $('dicepath').open = true;
+    $('rolls').value = '4'.repeat(50); $('rolls').dispatchEvent(new Event('input'));
+    const live = $('dicequal').textContent;
+    if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
+    $('dicego').click();
+    await new Promise(r => setTimeout(r, 200));
+    const first = { box: $('in').value, warn: $('diceweak').style.display,
+                    anyway: $('diceanyway').style.display,
+                    focused: document.activeElement === $('diceanyway') };
+    $('rolls').value = '4'.repeat(51); $('rolls').dispatchEvent(new Event('input'));
+    const afterEdit = { warn: $('diceweak').style.display, anyway: $('diceanyway').style.display };
+    $('dicego').click(); await new Promise(r => setTimeout(r, 200));
+    $('diceanyway').click();
+    if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === 12)) return { err: 'second press did nothing' };
+    return { live, first, afterEdit, made: $('in').value.trim().split(/[ ]+/).length };`);
+  chk('faked rolls are named, write nothing on the first press, and need a second button',
+      !r.err && /do not look rolled/.test(r.live) && r.first.box === ''
+      && r.first.warn === 'block' && r.first.anyway === 'block' && r.first.focused === false
+      && r.afterEdit.warn === 'none' && r.afterEdit.anyway === 'none' && r.made === 12,
+      r.err || JSON.stringify(r));
+
+  // 5. and it does not cry wolf on rolls that were actually rolled
+  r = await p.evaluate(`${HELPERS}
+    const rnd = n => { let s = ''; const b = new Uint8Array(n * 3); crypto.getRandomValues(b);
+      let i = 0; while (s.length < n) { const v = b[i++ % b.length]; if (v < 252) s += (1 + v % 6) } return s };
+    const out = {};
+    for (const n of [50, 75, 100]) { let bad = 0;
+      for (let i = 0; i < 1500; i++) if (assessRolls(rnd(n)).flags.length) bad++;
+      out[n] = bad / 1500 * 100 }
+    return out;`);
+  chk('the roll-quality check does not cry wolf on genuine rolls',
+      Math.max(...Object.values(r)) < 2,
+      Object.entries(r).map(([n, v]) => `${n}: ${v.toFixed(2)}%`).join(', '));
+
+  // 6. every faked pattern is still caught
+  r = await p.evaluate(`${HELPERS}
+    const fakes = { allOne: '4'.repeat(100), alternating: '12'.repeat(50),
+      countUp: '123456'.repeat(17).slice(0, 100), countDown: '654321'.repeat(17).slice(0, 100),
+      threeFaces: '123'.repeat(34).slice(0, 100).split('').sort(() => 0.4).join(''),
+      block: '415263142536'.repeat(9).slice(0, 100) };
+    const out = {};
+    for (const k in fakes) out[k] = assessRolls(fakes[k]).flags.length > 0;
+    return out;`);
+  chk('every faked rolling pattern is still caught',
+      Object.values(r).every(Boolean), JSON.stringify(r));
+
+  // 7. the two routes are a choice, not a checklist
+  r = await p.evaluate(`${HELPERS}
+    const A = $('apppath'), D = $('dicepath');
+    A.open = false; D.open = false;
+    const atLoad = [A.open, D.open];
+    A.querySelector('.pathbtn').click(); await new Promise(r => setTimeout(r, 60));
+    const afterGenerate = [A.open, D.open];
+    D.querySelector('.pathbtn').click(); await new Promise(r => setTimeout(r, 60));
+    const afterRoll = [A.open, D.open];
+    return { atLoad, afterGenerate, afterRoll,
+      genInApp: A.contains($('genfull')), findInApp: A.contains($('go')),
+      rollsInDice: D.contains($('rolls')), boxOutside: !A.contains($('in')) && !D.contains($('in')),
+      labels: [...document.querySelectorAll('.pathbtn')].map(b => b.textContent) };`);
+  chk('the two routes open one at a time, and each holds its own controls',
+      r.atLoad.join() === 'false,false' && r.afterGenerate.join() === 'true,false'
+      && r.afterRoll.join() === 'false,true' && r.genInApp && r.findInApp
+      && r.rollsInDice && r.boxOutside && r.labels.join() === 'Generate,Roll',
+      JSON.stringify(r));
+
+  // 8. the heading survives a phone. A fixed-width button beside a flexible
+  // title collapsed it to one word per line at 320px, which overflowed nothing
+  // and so passed every check there was.
+  await p.setViewport(320, 700);
+  r = await p.evaluate(`${HELPERS}
+    $('apppath').open = false; $('dicepath').open = false;
+    await new Promise(r => setTimeout(r, 120));
+    return [...document.querySelectorAll('.pathtitle')].map(e => {
+      const s = getComputedStyle(e), h = e.getBoundingClientRect().height;
+      return { w: Math.round(e.getBoundingClientRect().width),
+               lines: Math.round(h / parseFloat(s.lineHeight || 20)) } });`);
+  chk('path headings still read on a 320px screen', r.every(t => t.w >= 120 && t.lines <= 3),
+      JSON.stringify(r));
+  await p.setViewport(1280, 900);
 
   await p.close();
 }
@@ -933,7 +1125,11 @@ async function calibrate(browser, fileUrl) {
              .replace('<div class="infp" id="infp" style="display:none">',
                       '<div class="infp" id="infp" style="display: block;">')
              .replace('<div class="meter" id="meter" style="display:none">',
-                      '<div class="meter" id="meter" style="display: block;">');
+                      '<div class="meter" id="meter" style="display: block;">')
+             .replace('<div class="hint" id="dicequal"></div>',
+                      `<div class="hint bad-c" id="dicequal">\u26a0\ufe0e These rolls do not look rolled \u2014 ${SNAP_ROLLQ}.</div>`)
+             .replace('<span class="rollnum" id="dicecount">0</span>',
+                      '<span class="rollnum" id="dicecount">73 of 100</span>');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(s);
       });
@@ -955,6 +1151,7 @@ async function calibrate(browser, fileUrl) {
     const fileUrl = pathToFileURL(PAGE).href;
     await pageChecks(browser, fileUrl, `http://localhost:${PORT}/`);
     await guardChecks(browser, `http://localhost:${PORT}`);
+    await diceChecks(browser, `http://localhost:${PORT}`);
     if (process.argv.includes('--calibrate')) await calibrate(browser, fileUrl);
   } finally {
     browser.proc.kill();

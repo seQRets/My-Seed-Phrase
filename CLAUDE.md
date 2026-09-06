@@ -6,9 +6,20 @@ GitHub Pages (main, /root). Copyright Toothjockey LLC, MIT.
 
 ## What this is
 
-A BIP-39 tool with two flows sharing ONE seed field (the top textarea):
-generate a complete seed in one press, or supply 11/14/17/20/23 words and it
-returns every valid final word — choosing an ending (chip click or "Pick at
+A BIP-39 tool whose routes all share ONE seed field (the textarea in the "Your
+seed" card). A "Two ways to make a seed" chooser sits ABOVE that box, right
+under the safety guide, holding two collapsed <details> that behave as an
+accordion — opening one closes the other, because they are a choice, not a
+checklist. Path 1 "Let the app make it" (button: Generate) holds both
+app-driven jobs: generate a complete or partial seed, and find the checksum
+words for a phrase you already have. Path 2 "Roll your own randomness"
+(button: Roll) is the dice flow. Clear and Verify this page stay with the box,
+since they act on it rather than on either route. The buttons in the summaries
+are SPANS styled as buttons, never <button>: a button inside a summary nests
+one interactive control in another and the summary is already the click target.
+
+Path 1: generate a complete seed in one press, or supply 11/14/17/20/23 words
+and it returns every valid final word — choosing an ending (chip click or "Pick at
 random", top-right of the endings card) completes the seed in the top box.
 Any complete-length phrase gets a live verdict: green border when the checksum
 verifies, red with a plain-words reason when it does not. Complete seeds show a
@@ -17,9 +28,22 @@ SeedQR (numeric mode) in a blurred modal, which can also save a ~2000px PNG.
 Seeds you typed yourself get the same eye, copy and QR controls. An entropy
 read-out ("How hard these words are to guess") flags hand-picked words.
 
+Path 2 (dice): choose a target size, type rolls, and the ladder unlocks as the
+rolls arrive — 50/62/75/87/100 rolls for 12/15/18/21/24 words, being
+ceil(bits / log2 6). The button always offers the largest size the rolls
+justify and never the size merely asked for. Rolls are hashed (SHA-256 of the
+ASCII digits, the Coldcard / Ian Coleman convention, so the same rolls
+reproduce the same seed on a hardware wallet), the leading bytes become the
+entropy, and entropyToWords() appends the checksum. THERE IS NO ENDING TO PICK
+in this flow and never should be: the rolls supply every entropy bit, so the
+last word is already determined. Offering the endings card here would overwrite
+the last 7 bits with browser randomness and destroy both reproducibility and
+the reason someone chose dice. assessRolls() reads the rolls before they are
+hashed — see invariant 13.
+
 ## Architecture
 
-index.html is the entire site (~164 KB): wordlist, CSS, JS, an embedded
+index.html is the entire site (~195 KB): wordlist, CSS, JS, an embedded
 kazuhikoarase/qrcode-generator (MIT, verbatim), and in-file secp256k1 +
 RIPEMD-160 (see invariants). No build, no dependencies, no backend.
 verify.js (repo root) is the external test harness — single file, no deps.
@@ -41,6 +65,13 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    tripwires on it. If you change it deliberately: run node verify.js
    --calibrate, confirm false alarms stay near zero AND every hand-picking
    pattern is caught, then update the pinned hash. Never skip this.
+4b. The page self-test covers what CAN be pinned. The dice route is
+   deterministic, so it is held to a vector (rolls "123456"x9, sha256
+   edceb2d8…, "…chimney bullet") and cross-checked against candidates(), the
+   path the standard's own examples already verify. Randomness cannot be
+   covered this way and is not: a copy with an honest wordlist and honest
+   arithmetic but a rigged generator still reads 15 of 15, which is why step 5
+   of the in-page guide says so and points at the download hash instead.
 5. The ONLY hand-rolled crypto is secp256k1 + RIPEMD-160 for the display-only
    master fingerprint (no browser API exists). Both are vector-pinned by the
    page's own self-test (RIPEMD vectors, secp G, BIP-32 vector 1 → 3442193e,
@@ -53,8 +84,8 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    hash, and that in-page string. Bump the string FIRST — changing it changes
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
-   English, "still passes 14 of 14", then "## Verify your download" with the
-   shasum block. Current release: v1.6.7.
+   English, "still passes 15 of 15", then "## Verify your download" with the
+   shasum block. Current release: v1.6.8.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -85,7 +116,15 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    none". verify.js plants all three carriers in /snapshot — the note, the
    marked chip and the fingerprint — and matches each as a whole element or
    sentence, never as a bare word: every BIP-39 word is in the embedded list,
-   so a bare-word search can only ever pass.
+   so a bare-word search can only ever pass. The same trap bit the dice
+   read-out: the first sentinel planted for it was a sentence the page's own
+   script contains as a string literal, so it matched the <script> tag and the
+   check could only ever pass. Plant a sentence the page BUILDS at runtime, and
+   note the source-collision check that now guards every sentinel.
+   The dice flow adds its own derived nodes — the roll count, the quality
+   read-out, the stale and repeat-generation warnings — all cleared by
+   scrubDice(), which scrubDerived() calls. The rolls themselves never reach a
+   saved file, because a textarea's value is not part of the document.
    Modal layout: fingerprint sits directly under the QR (outside .qrbox, so the
    blur never covers it), the download warning directly under that, then two
    sentences with the longer explanation folded into a <details>. The card is a
@@ -128,9 +167,35 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
     off the guard cannot fire at all, but nothing runs either, so the tool is
     inert rather than working.
 
+13. The roll string IS the seed, one step earlier. Anyone holding it re-derives
+    every word for ever, on any machine, so it gets what the seed box gets: its
+    own blur and eye, re-blurred by anything that brings the page back, never
+    erased, and everything worked out from it scrubbed by scrubDice(). Say so in
+    the copy before they start typing, not after — people jot dice results on
+    paper as if they were scratch working.
+    assessRolls() is the only place a faked roll can still be caught. Hashing
+    whitens completely: "444…" and a real sequence produce output that looks
+    equally random, so assess() downstream reports a flawless phrase either way.
+    It takes the tightest of four upper bounds — face distribution, shortest
+    repeating block, gap distribution between consecutive rolls, and the ceiling
+    — and its FLAGS, not its bit count, gate a generate. Never gate on the bits:
+    over 50 rolls the count reads low from sample size alone (genuine rolls
+    measure as little as 0.85 of what the seed formally needs), so testing it
+    against the requirement stops honest rolls at the shortest length every
+    time. Calibrated like assess(): ~0% false alarms at every length, every
+    faked pattern caught. Changing it means re-running both halves.
+    A flagged generate follows the download gate — first press writes nothing,
+    names what is wrong, and waits for a separate "Make it anyway" button that
+    is deliberately NOT focused; editing the rolls withdraws the
+    acknowledgement.
+    A longer seed is a DIFFERENT seed, not an upgrade: rolling on from 50 to 100
+    shares not one word with what came before. The copy must kill that
+    assumption on sight, because someone who assumes otherwise ends up holding
+    two seeds and trusting the wrong one.
+
 ## How to verify + release
 
-    node verify.js            # 56 checks: drives real Chrome headless, checks
+    node verify.js            # 65 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,
@@ -142,7 +207,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
                               # the panel explaining a SeedQR's digits
     node verify.js --calibrate  # only when assess() changes
 
-Page self-test must read 14 of 14 (file:// and http).
+Page self-test must read 15 of 15 (file:// and http).
 Release: bump the footer version → commit → push → poll Pages build FOR THAT
 COMMIT (not just "built") → live hash == local → tag with hash in message →
 gh release create vX.Y.Z index.html --notes-file … → re-download asset +

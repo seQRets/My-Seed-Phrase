@@ -190,6 +190,13 @@
   button:hover{border-color:rgba(247,147,26,.5);color:var(--ink)}
   button.primary{background:var(--orange);border-color:var(--orange);color:#000}
   button.primary:hover{background:var(--gold);border-color:var(--gold);color:#000}
+  /* The dice button is the first control here that can be unavailable, and a
+     primary button that cannot be pressed must not still look like the thing
+     to press. Greyed, not merely dimmed, so it reads as off rather than faint. */
+  button:disabled,button.primary:disabled{background:var(--panel2);border-color:var(--line2);
+    color:var(--dim);cursor:not-allowed}
+  button:disabled:hover,button.primary:disabled:hover{background:var(--panel2);
+    border-color:var(--line2);color:var(--dim)}
   .hint{font-size:var(--fs-sm);color:var(--dim);margin-top:.9rem;letter-spacing:.02em}
   /* Saving is the only thing on this page that leaves the seed behind after
      the tab is shut, so its warning is not dim like the rest — it is red, and
@@ -210,6 +217,10 @@
     padding:.65rem 1rem;border-radius:9px;cursor:pointer;
     border:1px solid var(--red-ink);background:transparent;color:var(--red-ink)}
   #qrdlgo:hover{background:var(--red-ink);color:var(--bg)}
+  #diceanyway{display:block;margin-top:.75rem;border:1px solid var(--red-ink);
+    background:transparent;color:var(--red-ink)}
+  #diceanyway:hover{background:var(--red-ink);color:var(--bg)}
+  #diceanyway:focus-visible{outline:2px solid var(--red-ink);outline-offset:2px}
   #qrdlgo:focus-visible{outline:2px solid var(--red-ink);outline-offset:2px}
   select{font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;padding:.7rem 2.2rem .7rem .8rem;border-radius:9px;cursor:pointer;
@@ -240,6 +251,92 @@
   .mnote{font-size:var(--fs-sm);color:var(--muted);margin-top:.7rem;line-height:1.6}
   .mnote b{color:var(--ink);font-weight:700}
   .ok-c{color:var(--green-ink)} .warn-c{color:var(--accent-ink)} .bad-c{color:var(--red-ink)}
+  /* ---- the two routes to a seed ---- */
+  /* Both paths land in the same box, so they are presented as siblings with the
+     same shape: a number, a prominent title, and one honest line about the
+     trade-off. The dice path folds away because it is long, not because it is
+     secondary — its summary carries the same title and subtitle as path 1, so a
+     reader comparing the two never has to open it to know what it is. */
+  .pathslede{font-size:var(--fs-md);color:var(--muted);line-height:1.6;margin:.7rem 0 0;
+    max-width:46rem}
+  .path{border:1px solid var(--line2);border-radius:14px;padding:1.1rem 1.2rem;
+    margin-top:1.1rem;background:var(--panel2)}
+  .path>.pathhead,.path>summary{list-style:none;display:grid;align-items:center;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:"num title btn" "sub sub sub";
+    gap:.45rem .9rem;
+    text-transform:none;letter-spacing:normal;font-size:inherit;font-weight:400;
+    color:var(--ink)}
+  .pathnum{grid-area:num} .pathtitle{grid-area:title}
+  .pathbtn{grid-area:btn} .pathsub{grid-area:sub}
+  .path>summary{cursor:pointer}
+  .path>summary::-webkit-details-marker{display:none}
+  /* the shared caret sits left of everything; here the number holds that spot,
+     so the disclosure moves to the far end and keeps the two heads identical */
+  /* the [open] form of the shared rule out-specifies a plain .path>summary, so
+     both states have to be silenced or a second caret appears left of the badge */
+  .path>summary::before,.path[open]>summary::before{content:none}
+  /* A real <button> inside <summary> would nest one interactive control in
+     another, which confuses assistive tech and buys nothing — the summary is
+     already the click target. So this is a span that looks like a button, and
+     it fills in when its path is open: the pair reads as a choice of route,
+     not as two independent disclosures. */
+  .pathbtn{justify-self:end;padding:.45rem .95rem;
+    border-radius:8px;border:1px solid var(--line);background:var(--panel);
+    color:var(--muted);font:700 var(--fs-xs)/1.5 var(--sans);letter-spacing:.1em;
+    text-transform:uppercase;white-space:nowrap;
+    transition:border-color .15s,color .15s,background .15s}
+  .path>summary:hover .pathbtn{border-color:rgba(247,147,26,.5);color:var(--ink)}
+  .path[open] .pathbtn{background:var(--orange);border-color:var(--orange);color:#000}
+  .path>summary:hover .pathtitle{color:var(--accent-ink)}
+  .pathnum{flex:none;width:1.9rem;height:1.9rem;border-radius:999px;background:var(--orange);
+    color:#1B1814;font:800 var(--fs-sm)/1.9rem var(--sans);text-align:center}
+  .pathtitle{font-size:var(--fs-lg);font-weight:800;letter-spacing:-.01em;color:var(--ink)}
+  .pathsub{font-size:var(--fs-sm);color:var(--muted);line-height:1.6}
+  .pathbody{margin-top:1.3rem;padding-top:1.2rem;border-top:1px solid var(--line2)}
+  .sublab{font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dim);margin-top:1.4rem}
+  .pathbody>.sublab:first-child{margin-top:0}
+  .pathnote{font-size:var(--fs-sm);color:var(--muted);line-height:1.6;margin:.5rem 0 0}
+  /* Below 560px there is not enough width for a badge, a title and a button on
+     one line — the title collapses to one word per line. Drop the button to its
+     own row rather than letting it eat the heading. */
+  @media (max-width:560px){
+    .path>.pathhead,.path>summary{grid-template-columns:auto minmax(0,1fr);
+      grid-template-areas:"num title" "sub sub" "btn btn"}
+    .pathbtn{justify-self:start;margin-top:.55rem}
+  }
+  /* ---- dice ---- */
+  .dicelede{font-size:var(--fs-md);color:var(--muted);line-height:1.6;margin:.2rem 0 0}
+  .dicelede+.dicelede{margin-top:.7rem}
+  /* The rolls are the seed in another form, so the warning that says so gets the
+     same red box as the download gate, not the dim .hint colour. */
+  .dicewarn{font-size:var(--fs-sm);color:var(--red-ink);border:1px solid var(--red-ink);
+    border-radius:10px;padding:.7rem .8rem;margin-top:1rem;line-height:1.6;
+    background:rgba(248,113,113,.07)}
+  .sizes{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}
+  .size{flex:1 1 5.6rem;padding:.55rem .5rem;border-radius:10px;background:var(--panel2);
+    border:1px solid var(--line2);cursor:pointer;text-align:center;color:var(--ink);
+    font:600 var(--fs-sm)/1.35 var(--sans);transition:border-color .12s,background .12s}
+  .size:hover{border-color:rgba(247,147,26,.5)}
+  .size .n{display:block;font-size:var(--fs-xs);color:var(--dim);font-weight:400;
+    letter-spacing:.02em;margin-top:.15rem}
+  .size.on{background:rgba(247,147,26,.14);border-color:var(--orange);color:var(--accent-ink)}
+  .size.on .n{color:var(--accent-ink);opacity:.75}
+  .size.ready{border-color:var(--green-ink)}
+  #rolls{width:100%;min-height:5rem;margin-top:1rem;padding:.9rem 1rem;
+    border:1px solid var(--fieldline);border-radius:12px;background:var(--field);
+    color:var(--ink);font:15px/1.9 var(--mono);letter-spacing:.16em;resize:vertical}
+  #rolls::placeholder{color:var(--dim);letter-spacing:.02em}
+  #rolls:focus{outline:none;border-color:rgba(247,147,26,.6);
+    box-shadow:0 0 0 3px var(--glow)}
+  #rolls.shield{color:transparent;text-shadow:0 0 .55em var(--muted);caret-color:transparent}
+  #rolls.shield::placeholder{text-shadow:none}
+  .rollrow{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
+    margin:.9rem 0 .55rem}
+  .rollnum{font:700 var(--fs-md) var(--mono);color:var(--ink)}
+  .rollof{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700}
   .status{font-size:var(--fs-md);margin-top:1rem;min-height:1.4em;font-weight:600}
   /* an empty status was silently reserving a line below the buttons, making
      the card bottom-heavy — take it out of flow until it has something to say */
@@ -554,7 +651,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <li>Turn off Wi-Fi and unplug any internet cable.</li>
         <li>Open a private window in that profile and drag the downloaded file onto it.</li>
         <li>Check the badge below reads <b>Offline — safe to generate</b>, then press
-            <b>Verify this page</b> and confirm it says <b>14 of 14 checks passed</b>.
+            <b>Verify this page</b> and confirm it says <b>15 of 15 checks passed</b>.
             That makes the page work out answers already published in the BIP-39 standard
             and take a fingerprint of its own built-in word list — an altered copy gets
             those wrong. What it cannot do is prove the words you are given are truly
@@ -568,9 +665,114 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     </details>
   </div>
 
+  <div class="card" id="paths">
+    <div class="h">Two ways to make a seed</div>
+    <p class="pathslede">Both put a finished seed in the box below. The only difference is
+      where the randomness comes from — and that is the part that decides whether anyone can
+      ever guess it.</p>
+
+    <details class="path" id="apppath">
+      <summary class="pathhead">
+        <span class="pathnum">1</span>
+          <span class="pathtitle">Let the app make it</span>
+          <span class="pathsub">The quick route. The app draws the words from your browser’s random
+            number generator — the one built for security work — or works out the endings for
+            words you already have. You cannot check its randomness, and no page can prove its
+            own is honest, including this one.</span>
+        <span class="pathbtn">Generate</span>
+      </summary>
+      <div class="pathbody">
+      <div class="sublab">Make a new seed</div>
+      <div class="row">
+      <select id="genlen" aria-label="How many words to generate">
+        <option value="11">11 words → 12-word seed</option>
+        <option value="14">14 words → 15-word seed</option>
+        <option value="17">17 words → 18-word seed</option>
+        <option value="20">20 words → 21-word seed</option>
+        <option value="23">23 words → 24-word seed</option>
+      </select>
+      <button id="gen">Generate partial seed</button>
+      <button class="primary" id="genfull">Generate complete seed</button>
+      <span class="tipwrap"><button class="tipbtn" type="button"
+        aria-label="What the generate buttons do">i</button><span class="tipbox"
+        role="tooltip">Both generate buttons draw from your browser's random number generator,
+        the one built for security work. A partial seed stops one word short, so you can watch
+        the checksum narrow the endings and pick one yourself; a complete seed is finished for
+        you. Nothing is saved, recorded or sent anywhere.</span></span>
+      </div>
+      <div class="sublab">Or finish a seed you already have</div>
+      <p class="pathnote">Type 11, 14, 17, 20 or 23 words into the box below and the app
+        returns every final word the checksum allows.</p>
+      <div class="row">
+        <button class="primary" id="go">Find checksum words</button>
+        <button id="ex">Load example</button>
+      </div>
+      </div>
+    </details>
+
+    <details class="path" id="dicepath">
+      <summary class="pathhead">
+        <span class="pathnum">2</span>
+          <span class="pathtitle">Roll your own randomness</span>
+          <span class="pathsub">The slow route, and the only one where you do not have to take
+            the browser on trust. Roll dice, type the results, and the same rolls always make
+            the same seed.</span>
+        <span class="pathbtn">Roll</span>
+      </summary>
+      <div class="pathbody">
+
+    <p class="dicelede">Everything else on this page leans on your browser’s random number
+      generator. If you would rather not take that on trust — and no web page can prove its own
+      randomness is honest, including this one — roll dice instead and type the results here.</p>
+    <p class="dicelede">The same rolls always make the same seed. That means you can check this
+      page’s answer against a hardware wallet that does the same thing, and it means the rolls
+      are worth keeping until you have.</p>
+    <div class="dicewarn">⚠︎ <b>These numbers are your seed.</b> Anyone who has them can work
+      out every word, on any computer, for ever. Treat the paper you rolled onto exactly like
+      the paper you write the words on — and once the words are written down and checked,
+      destroy it.</div>
+
+    <div class="h" style="margin-top:1.6rem">Which seed do you want to end up with?</div>
+    <div class="sizes" id="dicesizes">
+      <button class="size" type="button" data-w="12">12 words<span class="n">50 rolls</span></button>
+      <button class="size" type="button" data-w="15">15 words<span class="n">62 rolls</span></button>
+      <button class="size" type="button" data-w="18">18 words<span class="n">75 rolls</span></button>
+      <button class="size" type="button" data-w="21">21 words<span class="n">87 rolls</span></button>
+      <button class="size on" type="button" data-w="24">24 words<span class="n">100 rolls</span></button>
+    </div>
+    <p class="dicelede" id="dicetarget"></p>
+
+    <textarea id="rolls" spellcheck="false" autocomplete="off" autocapitalize="off"
+      autocorrect="off" inputmode="numeric"
+      placeholder="type each roll as you go — 4 3 1 2 5 6 …"></textarea>
+    <div class="rollrow">
+      <span class="rollof">Rolls</span>
+      <span class="rollnum" id="dicecount">0</span>
+    </div>
+    <div class="bar"><div class="fill" id="dicefill"></div></div>
+    <div class="invalidnote" id="dicebad"></div>
+    <div class="hint" id="dicenote"></div>
+    <div class="hint" id="dicequal"></div>
+    <div class="dicewarn" id="dicestale" style="display:none"></div>
+    <div class="dicewarn" id="diceweak" style="display:none"></div>
+    <button id="diceanyway" style="display:none">Make it anyway</button>
+    <div class="dicewarn" id="diceagain" style="display:none"></div>
+    <div class="row">
+      <button class="primary" id="dicego" disabled>Make a seed</button>
+      <button id="diceclr">Clear rolls</button>
+      <button id="dicepeek" aria-pressed="true" aria-label="Hide the rolls">Hide rolls</button>
+    </div>
+    <p class="dicelede" style="margin-top:1.2rem">Any six-sided die works, but a cheap one is
+      not perfectly fair. Casino dice are, and cost very little. If you are unsure about yours,
+      roll more than the minimum — an unfair die carries less randomness per roll, and extra
+      rolls make up the difference.</p>
+      </div>
+    </details>
+  </div>
+
   <div class="card" id="inputcard">
     <div id="badge" class="badge on"><span class="led"></span><span id="badgetxt">Checking…</span></div>
-    <div class="h">Your words — 11, 14, 17, 20 or 23</div>
+    <div class="h">Your seed</div>
     <div class="inwrap" id="inwrap">
     <textarea id="in" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
       placeholder="type, paste or generate an incomplete seed, separated by spaces — or generate a complete seed instead"></textarea>
@@ -595,27 +797,8 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="invalidnote" id="invalidnote"></div>
     <div class="hint" id="inhint" style="display:none"></div>
     <div class="row">
-      <button class="primary" id="go">Find checksum words</button>
-      <button id="ex">Load example</button>
       <button id="clr">Clear</button>
       <button id="test">Verify this page</button>
-    </div>
-    <div class="row">
-      <select id="genlen" aria-label="How many words to generate">
-        <option value="11">11 words → 12-word seed</option>
-        <option value="14">14 words → 15-word seed</option>
-        <option value="17">17 words → 18-word seed</option>
-        <option value="20">20 words → 21-word seed</option>
-        <option value="23">23 words → 24-word seed</option>
-      </select>
-      <button id="gen">Generate partial seed</button>
-      <button class="primary" id="genfull">Generate complete seed</button>
-      <span class="tipwrap"><button class="tipbtn" type="button"
-        aria-label="What the generate buttons do">i</button><span class="tipbox"
-        role="tooltip">Both generate buttons draw from your browser's random number generator,
-        the one built for security work. A partial seed stops one word short, so you can watch
-        the checksum narrow the endings and pick one yourself; a complete seed is finished for
-        you. Nothing is saved, recorded or sent anywhere.</span></span>
     </div>
     <div class="status" id="st"></div>
     <div class="meter" id="meter" style="display:none">
@@ -873,7 +1056,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.8 · RUNS OFFLINE</div>
+    <div class="r">v1.6.9 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3307,6 +3490,7 @@ function scrubDerived() {
   // the rounded number. Drop the attribute rather than blanking the two
   // properties, so a scrubbed copy matches the file as published.
   $("mfill").removeAttribute("style");
+  scrubDice();                        // the rolls derive a seed, so they derive secrets too
   $("st").className = "status";
   $("st").textContent = "";
   $("inhint").textContent = "";
@@ -3576,6 +3760,33 @@ async function selfTest() {
     "the two primitives this file implements itself, held to published vectors",
     fpResult, fpOk));
 
+  // The dice route has its own arithmetic, and it is deterministic, so unlike
+  // the randomness it CAN be held to a vector. Anyone can reproduce the entropy
+  // with one command: printf "123456%.0s" {1..9} | shasum -a 256
+  let diceOk = false, diceResult = "";
+  try {
+    const rolls = "123456".repeat(9);                       // 54 rolls
+    const ent = await rollsToEntropy(rolls);
+    const hex = hexOf(ent);
+    const w12 = await entropyToWords(ent.slice(0, 16));
+    const w24 = await entropyToWords(ent.slice(0, 32));
+    const again = await entropyToWords((await rollsToEntropy(rolls)).slice(0, 16));
+    // and the words it builds must satisfy the checksum this page works out by
+    // the other route, which the checks above have already held to the standard
+    const ends = await candidates(w12.slice(0, 11));
+    diceOk = hex === "edceb2d86ed94b3b67b707e8721ca00fd0d2fc48fe77bd51f04c07c97abb2413"
+      && w12.join(" ") === "universe intact render tank net oval paddle thought trick movie chimney bullet"
+      && w24.length === 24 && w24.slice(0, 11).join(" ") === w12.slice(0, 11).join(" ")
+      && again.join(" ") === w12.join(" ")
+      && ends.includes(w12[11]);
+    diceResult = diceOk
+      ? `the published roll vector still gives “…${w12.slice(-2).join(" ")}”, and its checksum agrees`
+      : "WRONG — do not use the dice route on this copy";
+  } catch (e) { diceOk = false; diceResult = "failed — " + e.message }
+  detail.push(row("Seeds made from dice",
+    "a fixed roll sequence must give the same words every time, and pass the checksum above",
+    diceResult, diceOk));
+
   const listHash = await sha256Text(WORDS.join("\n") + "\n");
   const listOk = listHash === WORDLIST_SHA256;
   const listResult = listOk ? `unchanged — SHA-256 ${listHash.slice(0, 10)}…`
@@ -3593,8 +3804,9 @@ async function selfTest() {
   detail.push(row("Your browser’s random number generator",
     "the generate and “Pick at random” buttons depend on it", rngResult, rngOk));
 
-  const ok = calcOk + (genOk ? 1 : 0) + (fpOk ? 1 : 0) + (listOk ? 1 : 0) + (rngOk ? 1 : 0);
-  const TOTAL = CALC_TOTAL + 4;
+  const ok = calcOk + (genOk ? 1 : 0) + (fpOk ? 1 : 0) + (diceOk ? 1 : 0)
+           + (listOk ? 1 : 0) + (rngOk ? 1 : 0);
+  const TOTAL = CALC_TOTAL + 5;
   const all = ok === TOTAL;
 
   // --- the three lines almost everyone actually wants -----------------------
@@ -3608,6 +3820,8 @@ async function selfTest() {
         "drawn at random, then checked against the calculation above", genResult, genOk),
     row("The master fingerprint derivation",
         "held to published BIP-32 and RIPEMD-160 test vectors", fpResult, fpOk),
+    row("Seeds made from dice",
+        "a fixed roll sequence, checked against the checksum maths above", diceResult, diceOk),
     row("The built-in word list",
         "must be the official BIP-39 English list", listResult, listOk),
     row("Your browser’s random number generator",
@@ -3867,6 +4081,249 @@ $("genfull").onclick = async () => {
   // it arrives hidden; the eye reveals it
   shieldOn();
 };
+
+/* ---- dice --------------------------------------------------------- */
+// A die has six faces, which is not a power of two, so rolls cannot be mapped
+// to bits without either bias or throwing draws away. Hashing the digits
+// sidesteps both and is what Coldcard and Ian Coleman's tool do, so the same
+// rolls reproduce the same seed on a hardware wallet — the whole point of
+// rolling them by hand. Note what hashing does NOT do: it spreads the
+// randomness over 256 bits without adding any. Fifty rolls carry 129 bits
+// whether they are hashed or not, which is why the longer sizes stay shut
+// until the rolls are actually there.
+const DICE = { 12:50, 15:62, 18:75, 21:87, 24:100 };   // ceil(bits / log2(6))
+let diceTarget = 24, diceMadeFrom = null, diceMadeCount = 0;
+
+async function rollsToEntropy(rolls) {
+  const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rolls));
+  return new Uint8Array(h);
+}
+// Entropy straight to a finished phrase. The last word is not a free choice
+// here and there is nothing to pick: the rolls supply every entropy bit, and
+// the final word carries the leftovers plus the checksum they imply.
+async function entropyToWords(bytes) {
+  const ent = [...bytes].map(b => bits(b, 8)).join("");
+  const h = await sha256(ent);
+  const cs = [...h].map(x => bits(x, 8)).join("").slice(0, ent.length / 32);
+  return (ent + cs).match(/.{11}/g).map(b => WORDS[parseInt(b, 2)]);
+}
+
+// Rolls can be typed, and typed rolls can be invented. Hashing hides that
+// completely: "444…" and a real sequence produce output that looks equally
+// random, so assess() further down sees a flawless phrase either way and says
+// so. The only place the difference is still visible is here, on the input.
+// Calibrated the way assess() was: 4,000 genuine sequences at each length trip
+// nothing, and every faked pattern tried is caught. The flags are what gates a
+// generate; the bit count only explains the finding, because over 50 rolls it
+// reads a few bits low from sample size alone.
+const LOG2_6 = log2(6);
+function assessRolls(r) {
+  const n = r.length, ceiling = n * LOG2_6;
+  if (!n) return { n, ceiling, bits: 0, flags: [] };
+  const counts = [0, 0, 0, 0, 0, 0];
+  for (const c of r) counts[+c - 1]++;
+  const faces = counts.filter(c => c).length;
+  // how lopsided the six faces are: a die that is not being rolled lands near 0
+  let H = 0;
+  for (const c of counts) if (c) { const p = c / n; H -= p * log2(p) }
+  // the shortest block the whole string repeats — "123456123456…" spreads the
+  // faces perfectly evenly and still carries only one block of randomness
+  let period = n;
+  for (let p = 1; p * 2 <= n; p++) {
+    let same = true;
+    for (let i = p; i < n && same; i++) if (r[i] !== r[i - p]) same = false;
+    if (same) { period = p; break }
+  }
+  // the gaps between one roll and the next, counting 6→1 as a step of one.
+  // Counting up scores zero here however evenly the faces are spread.
+  let steps = 0; const gaps = [0, 0, 0, 0, 0, 0];
+  for (let i = 1; i < n; i++) {
+    const d = (+r[i] - +r[i - 1] + 6) % 6;
+    gaps[d]++; if (d === 1 || d === 5) steps++;
+  }
+  let Hd = 0;
+  if (n > 1) for (const c of gaps) if (c) { const p = c / (n - 1); Hd -= p * log2(p) }
+  // every term is an upper bound on the work left to a guesser; take the tightest
+  const bits = Math.max(0, Math.min(ceiling, n * H, period * LOG2_6, LOG2_6 + (n - 1) * Hd));
+  const flags = [];
+  if (faces === 1) flags.push("every roll is the same number");
+  else if (period < n) flags.push(`the same ${period} roll${period > 1 ? "s" : ""} repeat over and over`);
+  else {
+    if (faces < 6) flags.push(`only ${faces} of the six faces ever come up`);
+    if (n >= 20 && steps >= (n - 1) * 0.7) flags.push("the numbers mostly run in sequence");
+    if (faces === 6 && n >= 30 && bits < ceiling * 0.85)
+      flags.push("one face comes up far more often than the others");
+  }
+  return { n, ceiling, bits, flags };
+}
+const diceRolls = () => $("rolls").value.replace(/[^1-6]/g, "");
+function diceUnlocked(n) { return Object.keys(DICE).map(Number).filter(w => n >= DICE[w]) }
+
+function updateDice() {
+  const raw = $("rolls").value;
+  const n = diceRolls().length;
+  const bad = [...new Set(raw.replace(/\s/g, "").split("").filter(c => !"123456".includes(c)))];
+  $("dicebad").style.display = bad.length ? "block" : "none";
+  if (bad.length) $("dicebad").textContent = "✕  Dice only show 1 to 6. Remove: " + bad.join(", ");
+
+  const need = DICE[diceTarget];
+  $("dicefill").style.width = Math.min(100, n / need * 100) + "%";
+  $("dicefill").style.background = n >= need ? "var(--green)" : "var(--orange)";
+  $("dicecount").textContent = `${n} of ${need}`;
+
+  const open = diceUnlocked(n);
+  document.querySelectorAll("#dicesizes .size").forEach(b =>
+    b.classList.toggle("ready", open.includes(+b.dataset.w)));
+
+  // offer the largest size the rolls actually justify, never larger
+  const best = open.filter(w => w <= diceTarget).pop();
+  $("dicego").disabled = !best;
+  $("dicego").textContent = best ? `Make a ${best}-word seed` : "Make a seed";
+
+  if (!n) {
+    $("dicenote").textContent = "";
+  } else if (!best) {
+    $("dicenote").textContent = `${DICE[12] - n} more until you could make a 12-word seed.`;
+  } else if (best < diceTarget) {
+    const next = Object.keys(DICE).map(Number).find(w => w > best && w <= diceTarget);
+    $("dicenote").textContent = `Enough for a ${best}-word seed. `
+      + `Keep going for ${next} — that needs ${DICE[next]}.`;
+  } else {
+    $("dicenote").textContent = `Enough for a ${diceTarget}-word seed.`;
+  }
+
+  // Say what the rolls look like while they are being typed, not only when the
+  // button is pressed — someone inventing them should see it going wrong.
+  const q = assessRolls(diceRolls());
+  if (!n || (best === undefined && !q.flags.length)) {
+    $("dicequal").textContent = ""; $("dicequal").className = "hint";
+  } else if (q.flags.length) {
+    $("dicequal").className = "hint bad-c";
+    $("dicequal").textContent = "⚠︎ These rolls do not look rolled — "
+      + q.flags.join("; ") + ".";
+  } else {
+    $("dicequal").className = "hint";
+    $("dicequal").textContent = "No patterns found in these rolls. That is not proof the die "
+      + "was fair; it only means nothing obvious is wrong with what you typed.";
+  }
+  // a fresh edit withdraws any acknowledgement, exactly like closing the QR modal
+  $("diceweak").style.display = "none";
+  $("diceanyway").style.display = "none";
+
+  // the box above no longer comes from what is written here
+  const stale = diceMadeFrom !== null && diceRolls() !== diceMadeFrom;
+  $("dicestale").style.display = stale ? "block" : "none";
+  if (stale) $("dicestale").innerHTML = "⚠︎ <b>You have changed the rolls since making that "
+    + "seed.</b> The words in the box above still work, but they no longer come from what is "
+    + "written here, so these numbers will not bring them back. Making another seed now will "
+    + "make a different one.";
+}
+
+function setDiceTarget(w) {
+  diceTarget = w;
+  document.querySelectorAll("#dicesizes .size").forEach(b =>
+    b.classList.toggle("on", +b.dataset.w === w));
+  $("dicetarget").textContent = `A ${w}-word seed needs ${DICE[w]} rolls. `
+    + (w > 12 ? "The shorter sizes unlock along the way." : "");
+  updateDice();
+}
+
+async function diceGenerate(acknowledged) {
+  if (FRAMED) return;
+  const rolls = diceRolls();
+  const best = diceUnlocked(rolls.length).filter(w => w <= diceTarget).pop();
+  if (!best) return;
+  // Rolls that carry a pattern make a seed that looks perfect and is not. Like
+  // the download gate, the first press writes nothing: it says what is wrong and
+  // waits for a second, separate button. That button is deliberately not focused.
+  // The flags are the gate, not the bit count. Counting faces over 50 rolls
+  // reads low by a few bits simply because 50 is a small sample — genuine rolls
+  // measure as little as 0.85 of what the seed formally needs — so testing
+  // bits against that requirement would stop honest rolls at the shortest
+  // length every time. Nothing dangerous slips past: for no flag to fire, all
+  // six faces must appear, with no repeating block, no run, and no skew, which
+  // already puts the count above 0.85 of the ceiling.
+  const q = assessRolls(rolls);
+  if (!acknowledged && q.flags.length) {
+    $("diceweak").style.display = "block";
+    $("diceweak").innerHTML = "⚠︎ <b>These rolls do not look like dice.</b> "
+      + (q.flags.length
+          ? (f => f.charAt(0).toUpperCase() + f.slice(1))(q.flags.join("; ")) + ". " : "")
+      + "Hashing them will still produce a seed that looks perfectly random — that is exactly "
+      + "the danger, because nothing further down this page can tell the difference. A guesser "
+      + `who noticed would need about <b>${Math.round(q.bits)}</b> yes-or-no answers instead of `
+      + `${Math.round(q.ceiling)}, and every one lost halves the work they face. Roll again with `
+      + "a real die.";
+    $("diceanyway").style.display = "block";
+    return;
+  }
+  $("diceweak").style.display = "none";
+  $("diceanyway").style.display = "none";
+  const ent = await rollsToEntropy(rolls);
+  const words = await entropyToWords(ent.slice(0, best / 3 * 4));   // 12→16B … 24→32B
+  $("in").value = words.join(" ");
+  showControls();
+  shieldOn();                       // born hidden, like anything else generated here
+  updateMeter();
+  if (diceMadeCount) {
+    $("diceagain").style.display = "block";
+    $("diceagain").innerHTML = "⚠︎ <b>This is a different seed, not a longer version of the "
+      + "last one.</b> A seed from 50 rolls and a seed from 100 rolls share nothing — not one "
+      + "word. If you have already written down a shorter seed, that seed still works and this "
+      + "one does not replace it. Decide which one you are keeping, and destroy the note for "
+      + "the other.";
+  }
+  diceMadeFrom = rolls; diceMadeCount++;
+  updateDice();
+  $("st").className = "status ok";
+  $("st").textContent = `✓  Complete ${best}-word seed in the box above, made from your `
+    + `${rolls.length} rolls.`;
+  $("inhint").style.display = "block";
+  $("inhint").textContent = `All ${best} words came from your dice. Nothing was chosen by hand `
+    + `and nothing came from your browser’s random number generator. A wallet will accept it as `
+    + `it stands. Write it down by hand before you do anything else. The last word was not left `
+    + `for you to choose: your rolls decided all ${best}, including the last one, which also `
+    + `carries the check that makes a wallet accept the phrase.`;
+  $("inputcard").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// The two routes are a choice, not a checklist: opening one closes the other,
+// so the page never shows two half-open paths competing for the same box.
+document.querySelectorAll("#paths .path").forEach(d => d.addEventListener("toggle", () => {
+  if (!d.open) return;
+  document.querySelectorAll("#paths .path").forEach(o => { if (o !== d) o.open = false });
+}));
+
+document.querySelectorAll("#dicesizes .size").forEach(b =>
+  b.addEventListener("click", () => setDiceTarget(+b.dataset.w)));
+$("rolls").addEventListener("input", updateDice);
+$("dicego").onclick = () => diceGenerate(false);
+$("diceanyway").onclick = () => diceGenerate(true);
+function setDicePeek(hidden) {
+  $("rolls").classList.toggle("shield", hidden);
+  $("dicepeek").textContent = hidden ? "Show rolls" : "Hide rolls";
+  $("dicepeek").setAttribute("aria-pressed", String(!hidden));
+  $("dicepeek").setAttribute("aria-label", hidden ? "Show the rolls" : "Hide the rolls");
+}
+// Rolls you typed are born visible, like words you typed — but anything that
+// brings the page back finds them hidden, and they are never erased.
+const diceHide = () => setDicePeek(true);
+$("dicepeek").onclick = () => setDicePeek(!$("rolls").classList.contains("shield"));
+$("diceclr").onclick = () => { $("rolls").value = ""; scrubDice(); updateDice() };
+// The rolls are seed material and everything worked out from them is written
+// into the document, so they scrub exactly like the seed does.
+function scrubDice() {
+  diceMadeFrom = null; diceMadeCount = 0;
+  $("dicebad").textContent = ""; $("dicebad").style.display = "none";
+  $("dicenote").textContent = "";
+  $("dicestale").style.display = "none"; $("dicestale").innerHTML = "";
+  $("diceagain").style.display = "none"; $("diceagain").innerHTML = "";
+  $("dicequal").textContent = ""; $("dicequal").className = "hint";
+  $("diceweak").style.display = "none"; $("diceweak").innerHTML = "";
+  $("diceanyway").style.display = "none";
+  $("dicecount").textContent = "0";
+  $("dicefill").removeAttribute("style");
+}
 
 /* ---- the in-box controls ------------------------------------------- */
 $("peek").onclick = () => setPeek(!$("in").classList.toggle("shield"));
@@ -4169,6 +4626,8 @@ $("clr").onclick = () => {
   shieldReset();
   scrubDerived();
   $("in").value = "";
+  $("rolls").value = "";
+  updateDice();
 };
 addEventListener("online", netBadge);
 addEventListener("offline", netBadge);
@@ -4183,6 +4642,7 @@ addEventListener("pageshow", e => {
   if (!e.persisted) return;
   qrHide();
   if ($("in").value.trim()) shieldOn();
+  if (diceRolls().length) diceHide();
 });
 
 netBadge();
@@ -4198,6 +4658,8 @@ qrHide();
 scrubDerived();
 if ($("in").value.trim()) shieldOn();
 else shieldReset();
+if (diceRolls().length) diceHide();
+setDiceTarget(24);
 updateMeter();
 </script>
 </body>

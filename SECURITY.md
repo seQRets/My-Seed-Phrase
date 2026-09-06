@@ -15,13 +15,15 @@ per [RFC 9116](https://www.rfc-editor.org/rfc/rfc9116).
 
 Include what you did, what happened, what you expected instead, and your browser
 and version. For a calculation fault, the exact words you entered are the most
-useful thing you can send.
+useful thing you can send — or, for the dice flow, the exact roll sequence.
+**Do not send either if it holds real funds**; reproduce the fault with a
+throwaway seed first.
 
 You should get an acknowledgement within a week.
 
 ## Before you report
 
-Press **Verify this page** on the affected site. If it doesn't say *14 of 14
+Press **Verify this page** on the affected site. If it doesn't say *15 of 15
 checks passed*, include that — a failure there is significant on its own, and
 tells us whether the copy you loaded matches what was published.
 
@@ -36,10 +38,16 @@ things that matter are specific.
 - Wrong results from the checksum or candidate-word calculation
 - Anything that causes the page to make an internet request
 - Anything weakening the randomness behind *Generate at random* or *Pick at random*
+- Wrong results from the dice flow — rolls that produce a seed other than the
+  one `SHA-256` of those digits implies, or a size offered that the roll count
+  does not justify
+- A faked or patterned roll sequence that the roll-quality check does not flag
 - Anything that could alter the embedded BIP-39 word list without the built-in
   verification catching it
-- Injection through the input field
-- Anything that causes an entered phrase to be stored, logged, or leave the page
+- Injection through the input field or the dice roll field
+- Anything that causes an entered phrase, or a dice roll sequence, to be stored,
+  logged, or leave the page — including surviving into a copy saved with
+  File → Save Page As
 
 **Out of scope**
 

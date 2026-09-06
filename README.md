@@ -1,6 +1,7 @@
 # My Seed Phrase
 
-Generate a complete BIP-39 seed phrase, or find every valid final word for the
+Generate a complete BIP-39 seed phrase — from the browser's random number
+generator or from your own dice rolls — or find every valid final word for the
 words you already have. Complete seeds can be shown as a standard SeedQR for
 wallets that scan a seed in.
 
@@ -10,6 +11,10 @@ open it and it works, online or off.
 **Live:** <https://myseedphrase.app>
 
 ## What it does
+
+A chooser at the top offers **two ways to make a seed**, both landing in the
+same box: let the app do it, or roll dice yourself. They are collapsed until you
+pick one, and opening one closes the other — they are a choice, not a checklist.
 
 The last word of a seed phrase is not a free choice. It has to carry the final
 scraps of the phrase's randomness *plus the whole checksum*, which pins it down
@@ -33,6 +38,82 @@ the uniform pick among 8 endings supplies the last 3, the same 256 bits as
 "generate the entropy, append the checksum." **Generate partial seed** stops
 before the ending, so you can watch the checksum narrow the choices and pick
 one yourself.
+
+### Rolling your own randomness
+
+Path 2 is dice. Everything else on the page leans on the browser's random number
+generator, and **no page can prove its own randomness is honest** — this is the
+one route where you do not have to take it on trust.
+
+Pick a target size and the page says how many rolls it needs; the shorter sizes
+unlock as the rolls arrive. The button always offers the largest size the rolls
+justify, never the size you asked for, because a longer seed made from too few
+rolls looks stronger than it is.
+
+| Seed | Rolls needed | Randomness supplied |
+|---:|---:|---:|
+| 12 words | 50 | 129.2 bits |
+| 15 words | 62 | 160.3 bits |
+| 18 words | 75 | 193.9 bits |
+| 21 words | 87 | 224.9 bits |
+| 24 words | 100 | 258.5 bits |
+
+A die has six faces, which is not a power of two, so rolls cannot be mapped to
+bits without either bias or discarding draws. The digits are hashed instead —
+`SHA-256` of the ASCII rolls, the convention Coldcard and Ian Coleman's tool
+use, so the same rolls reproduce the same seed on a hardware wallet. The leading
+bytes become the entropy and the checksum is appended as the standard
+specifies. Note what hashing does *not* do: it spreads the randomness over 256
+bits without adding any. Fifty rolls carry 129 bits whether hashed or not,
+which is exactly why the longer sizes stay shut until the rolls are there.
+
+**There is no ending to pick in this flow, and that is not an omission.** The
+rolls supply every entropy bit, so the final word — which carries the last few
+bits *and* the checksum they imply — is already decided. Offering the endings
+list here would overwrite those bits with browser randomness and destroy both
+the reproducibility and the reason for rolling in the first place.
+
+A longer seed is a **different** seed, not an upgrade: carrying on from 50 rolls
+to 100 shares not one word with what came before. The page says so the moment it
+could matter.
+
+### The roll-quality check
+
+Rolls can be typed, and typed rolls can be invented. Hashing hides that
+completely — `444…` and a real sequence produce output that looks equally
+random, so the entropy read-out further down reports a flawless phrase either
+way. The only place the difference is still visible is the rolls themselves, so
+`assessRolls()` reads them before they are hashed.
+
+It takes the tightest of four upper bounds on the work left to a guesser: how
+lopsided the six faces are, the shortest block the whole string repeats, the
+distribution of gaps between one roll and the next, and the theoretical ceiling.
+
+| What you type | Reported | Reason given |
+|---|---:|---|
+| `444444…` | 0 of 129 bits | every roll is the same number |
+| `121212…` | 5 of 258 | the same 2 rolls repeat over and over |
+| `123456` ×17 | 3 of 258 | the same 6 rolls repeat over and over |
+| three faces only | 157 of 258 | only 3 of the six faces ever come up |
+| a 12-roll block repeated | 31 of 258 | the same 12 rolls repeat over and over |
+| loaded die, 70% sixes | 158 of 258 | one face comes up far more often than the others |
+
+Calibrated the way the entropy meter was, over 4,000 genuine sequences at each
+length: false alarms are **0.10% at 50 rolls and 0% at 75 and above**.
+
+Its *flags* gate a generate, never its bit count. Over 50 rolls the count reads
+low from sample size alone — genuine rolls measure as little as 0.85 of what the
+seed formally needs — so testing it against that requirement would stop honest
+rolls at the shortest length every time. Nothing dangerous slips past: for no
+flag to fire, all six faces must appear with no repeating block, no run and no
+skew, which already puts the count above 0.85 of the ceiling.
+
+Flagged rolls follow the same two-press gate as the download button. The first
+press writes nothing: it names what is wrong, gives the honest number, and waits
+for a separate *Make it anyway* button that is deliberately not focused. Editing
+the rolls withdraws the acknowledgement.
+
+### Shared behaviour
 
 Everything happens in one seed field. Anything the generator produces —
 a complete seed or a partial one — lands in the input box **blurred**, so it is
@@ -171,7 +252,7 @@ Two checks before you type anything real:
 
 1. The badge near the top should read **"Offline — safe to generate"** in green. If
    it still says *Online*, something is still connected — go back to step 3.
-2. Press **Verify this page**. It must say **14 of 14 checks passed**. That
+2. Press **Verify this page**. It must say **15 of 15 checks passed**. That
    confirms the calculator gets the right answer on example phrases whose
    correct answers are published in the BIP-39 standard, and that its built-in
    word list has not been altered. It checks the *page* — it can tell you
@@ -202,6 +283,11 @@ Honest limits, none of which are fixable in a web page:
   in the page, in the text box's undo history, and in the browser's memory until
   the tab is closed — and possibly in a file on disk, if your computer ran short
   of memory and parked some of it there.
+- **Your dice rolls.** The numbers are the seed one step earlier: anyone who has
+  them can work out every word, on any computer, for ever. The page gives them
+  the same blur the seed box gets and clears everything worked out from them,
+  but the paper you rolled onto is outside its reach. Destroy it once the words
+  are written down and checked.
 - **A copy you save while a phrase is on screen.** File → Save Page As writes
   what is on the screen to disk — including the ending word this page chose and
   your wallet's fingerprint. Opening that file again clears both, but a backup, a
@@ -219,19 +305,33 @@ Don't take the above on faith. Two checks, both quick:
 **1. Press "Verify this page".** It works out the endings for nine example
 phrases whose correct answers are published in the BIP-39 standard, and confirms
 this page produces each one — with the right number of options and no
-duplicates. It then hashes the built-in word list and compares it against the
-official file, and checks that a real cryptographic RNG is present. It should
-read **14 of 14 checks passed**.
+duplicates. It then re-derives a seed from a fixed dice roll sequence and checks
+it against the checksum maths above, hashes the built-in word list and compares
+it against the official file, and checks that a real cryptographic RNG is
+present. It should read **15 of 15 checks passed**.
 
-By default it shows five lines — the calculations, the phrases it generates, the
-fingerprint derivation, the word list, the random number generator — each either
-pass or fail. *Show all 14 checks* expands the full breakdown for anyone who
-wants it, and opens by itself if anything failed.
+By default it shows six lines — the calculations, the phrases it generates, the
+fingerprint derivation, seeds made from dice, the word list, the random number
+generator — each either pass or fail. *Show all 15 checks* expands the full
+breakdown for anyone who wants it, and opens by itself if anything failed.
+
+The dice check is one you can reproduce yourself. The vector is `123456`
+repeated nine times, and its entropy is a plain SHA-256 of those digits:
+
+```bash
+printf "123456%.0s" {1..9} | shasum -a 256
+# edceb2d86ed94b3b67b707e8721ca00fd0d2fc48fe77bd51f04c07c97abb2413
+```
+
+Feed those first 16 bytes to any BIP-39 tool and you get the twelve words this
+page must produce. Unlike the randomness — which no page can prove honest about
+itself — the dice route is deterministic, so it can be pinned to a vector, and
+it is.
 
 That wordlist check is the one verification that survives someone tampering with
 a hosted copy: swapping a single word in the embedded list drops the result to
-13 of 14 and prints a different hash, and lower the more the example phrases
-lean on that word — 12 of 14 for `about`, 8 of 14 for `abandon`.
+14 of 15 and prints a different hash, and lower the more the example phrases
+lean on that word — 13 of 15 for `about`, 9 of 15 for `abandon`.
 
 The tenth check is a regression test. A tempting way to write this calculation
 is to compare `idx.toString(2)` against a zero-padded 11-bit string —
@@ -356,6 +456,23 @@ file, so the two have to agree independently. It checks the word list hash, that
 no `Math.random` has crept in, that the page still loads nothing from anywhere
 over both `file://` and HTTP, that generated phrases validate, and that nothing
 overflows or wraps between 320px and 1440px.
+
+The dice flow gets the same treatment: a second independent implementation
+derives the seed from a fixed roll vector and the two must agree at 12 and 24
+words. It also checks that the roll count decides the size offered — both the
+button's label *and* what pressing it actually makes, which are not the same
+thing and were not the same thing once — that a dice seed arrives hidden with no
+ending to pick, that faked rolls write nothing on the first press, that the
+quality check neither cries wolf nor misses a faked pattern, that the two routes
+open one at a time, and that the path headings still read at 320px.
+
+Every check here was confirmed to fail against deliberately broken code before
+being kept. Three did not, and were rewritten: one read a button's label instead
+of its effect, one read a stale seed an earlier check had left in the box, and
+one planted a sentinel string that also appears in the page's own source, so it
+matched the `<script>` tag and could only ever pass. A check that cannot fail is
+worse than no check, so `verify.js` now asserts that no planted sentinel occurs
+in `index.html`.
 
 ```bash
 node verify.js --calibrate
