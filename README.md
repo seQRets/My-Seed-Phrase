@@ -41,9 +41,11 @@ one yourself.
 
 ### Rolling your own randomness
 
-Path 2 is dice. Everything else on the page leans on the browser's random number
-generator, and **no page can prove its own randomness is honest** — this is the
-one route where you do not have to take it on trust.
+Path 2 is dice. The browser's random number generator is a good one — it is the
+CSPRNG your operating system provides — and nothing here suggests otherwise.
+What using it does mean is trusting that the copy of this page you are running
+is the one that was published. **Dice remove even that question**, because the
+randomness is yours rather than the page's.
 
 Pick a target size and the page says how many rolls it needs; the shorter sizes
 unlock as the rolls arrive. The button always offers the largest size the rolls

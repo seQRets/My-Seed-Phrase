@@ -654,10 +654,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
             <b>Verify this page</b> and confirm it says <b>15 of 15 checks passed</b>.
             That makes the page work out answers already published in the BIP-39 standard
             and take a fingerprint of its own built-in word list — an altered copy gets
-            those wrong. What it cannot do is prove the words you are given are truly
-            random: no page can test that about itself, which is why step 1 is the one
-            that matters. It needs no connection, and it checks the page, not your
-            computer.</li>
+            those wrong. What it cannot do is prove this copy is the one that was
+            published: a tampered copy with an honest word list and honest arithmetic
+            would still pass every check here. That is what step 1’s fingerprint is for.
+            It needs no connection, and it checks the page, not your computer.</li>
         <li>Write the phrase down by hand — never the copy or download buttons. Do not save
             the page again once a phrase is on screen: that writes what you can see to
             disk. Then quit the browser completely before reconnecting.</li>
@@ -675,10 +675,11 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <summary class="pathhead">
         <span class="pathnum">1</span>
           <span class="pathtitle">Let the app make it</span>
-          <span class="pathsub">The quick route. The app draws the words from your browser’s random
-            number generator — the one built for security work — or works out the endings for
-            words you already have. You cannot check its randomness, and no page can prove its
-            own is honest, including this one.</span>
+          <span class="pathsub">The quick route. The words come from your browser’s random
+            number generator — the one your operating system provides for security work. That
+            generator is sound. What no page can prove about itself is that it is the copy that
+            was published, which is what checking the file’s fingerprint in step 1 settles. This
+            route also works out the endings for words you already have.</span>
         <span class="pathbtn">Generate</span>
       </summary>
       <div class="pathbody">
@@ -721,12 +722,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       </summary>
       <div class="pathbody">
 
-    <p class="dicelede">Everything else on this page leans on your browser’s random number
-      generator. If you would rather not take that on trust — and no web page can prove its own
-      randomness is honest, including this one — roll dice instead and type the results here.</p>
-    <p class="dicelede">The same rolls always make the same seed. That means you can check this
-      page’s answer against a hardware wallet that does the same thing, and it means the rolls
-      are worth keeping until you have.</p>
+    <p class="dicelede">Your browser’s random number generator is a good one. Using it does
+      mean trusting that this page is the copy that was published — dice remove even that
+      question, because the randomness is yours. Roll a die and type the results here.</p>
+    <p class="dicelede">The same rolls always make the same seed. That means a hardware wallet
+      can be made to check this page’s answer, and it means the rolls are worth keeping until
+      you have.</p>
     <div class="dicewarn">⚠︎ <b>These numbers are your seed.</b> Anyone who has them can work
       out every word, on any computer, for ever. Treat the paper you rolled onto exactly like
       the paper you write the words on — and once the words are written down and checked,
@@ -1056,7 +1057,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.9 · RUNS OFFLINE</div>
+    <div class="r">v1.7.0 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">

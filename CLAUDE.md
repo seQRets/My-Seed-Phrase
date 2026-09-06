@@ -72,6 +72,12 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    covered this way and is not: a copy with an honest wordlist and honest
    arithmetic but a rigged generator still reads 15 of 15, which is why step 5
    of the in-page guide says so and points at the download hash instead.
+   Aim that limit correctly. crypto.getRandomValues is the OS CSPRNG and is
+   sound — never write copy implying the generator itself is doubtful, which
+   v1.6.8 and v1.6.9 did ("you cannot check its randomness", right under the
+   Generate button). The unprovable thing is FILE PROVENANCE: that this copy is
+   the published one. Say that, and point at the fingerprint that settles it.
+   Dice are a complement to path 1, not an indictment of it.
 5. The ONLY hand-rolled crypto is secp256k1 + RIPEMD-160 for the display-only
    master fingerprint (no browser API exists). Both are vector-pinned by the
    page's own self-test (RIPEMD vectors, secp G, BIP-32 vector 1 → 3442193e,
