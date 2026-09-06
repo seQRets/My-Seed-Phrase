@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.6.8.
+   shasum block. Current release: v1.7.1.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -144,7 +144,14 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 9. Candidate list reads top-to-bottom then left-to-right (CSS columns:9rem,
    not a grid). No horizontal overflow 320–1440px. Tooltips are pinned to the
    viewport below 560px: the bubble is nearly screen-width and its trigger
-   moves, so it cannot hang off the trigger.
+   moves, so it cannot hang off the trigger. Opening a path scrolls it to the
+   top of the view (scroll-margin-top on .path keeps it off the edge), because
+   the body unfolds tall enough to push the seed box below the fold and leave
+   the buttons and the box they fill in different screenfuls. Called straight
+   out, NOT in requestAnimationFrame: scrollIntoView flushes layout itself, and
+   a frame callback queued while the tab is hidden fires whenever the tab is
+   next looked at, jerking the page then. prefers-reduced-motion turns the
+   page's smooth scrolling off.
 10. Copy register: plain English for a scared seed-phrase holder, not an
     engineer. No "network request/entropy bits/hash/CSP" in user-facing copy;
     a bit is "one yes-or-no answer"; honest about limits, never reassuring
@@ -201,7 +208,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 65 checks: drives real Chrome headless, checks
+    node verify.js            # 66 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,

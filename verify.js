@@ -650,6 +650,30 @@ async function guardChecks(browser, base) {
   chk('the frame guard leaves the real page alone',
       !r.framed && r.mainShown && r.warnHidden, JSON.stringify(r));
 
+  // Opening a path unfolds a tall body. Without a scroll the buttons stay put
+  // and the box they fill drops below the fold, so the two halves of the job
+  // end up in different screenfuls.
+  await p.setViewport(1280, 1000);
+  r = await p.evaluate(`${HELPERS}
+    const out=[];
+    for (const el of [...document.querySelectorAll('#paths .path')]) {
+      scrollTo(0,0);
+      await new Promise(z=>setTimeout(z,400));
+      const before=Math.round(scrollY);
+      el.querySelector('summary').click();
+      await new Promise(z=>setTimeout(z,1200));
+      const box=$('in').getBoundingClientRect();
+      out.push({moved:Math.round(scrollY)>before,
+        top:Math.round(el.getBoundingClientRect().top),
+        boxInView: box.top<innerHeight && box.bottom>0});
+    }
+    return out;`);
+  chk('opening a path scrolls it to the top, with the seed box in view',
+      Array.isArray(r) && r.length === 2
+      && r.every(x => x.moved && x.top >= 0 && x.top <= 60 && x.boxInView),
+      JSON.stringify(r));
+  await p.setViewport(1280, 900);
+
   await p.goto(base + '/framer');
   await new Promise(z => setTimeout(z, 700));
   r = await p.evaluate(`${HELPERS} const d=$('f').contentDocument;
