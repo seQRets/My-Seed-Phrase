@@ -859,7 +859,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.6 · RUNS OFFLINE</div>
+    <div class="r">v1.6.7 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3267,6 +3267,33 @@ function shieldReset() {
   $("infp").style.display = "none";
   clearSeedVerdict();
 }
+// Everything the page works out from a seed is written into the document: the
+// endings, the status line, the entropy read-out, the master fingerprint, and
+// the note naming the chosen ending — which is an actual word of the seed. A
+// document is exactly what File → Save Page As writes to disk, so hiding those
+// is not enough; hidden text is still text in the file. Scrub the values
+// themselves. This runs when the box is cleared and again when the page opens,
+// because a copy saved mid-use carries them in, and no reload can remove what
+// has become part of the file.
+function scrubDerived() {
+  current = []; prefix = [];
+  $("out").style.display = "none";
+  $("outlbl").textContent = "";
+  $("grid").innerHTML = "";
+  $("randnote").style.display = "none";
+  $("randnote").textContent = "";
+  $("testout").style.display = "none";
+  $("testbody").innerHTML = "";
+  $("meter").style.display = "none";
+  $("mval").className = "mval";
+  $("mval").textContent = "";
+  $("mnote").innerHTML = "";
+  $("st").className = "status";
+  $("st").textContent = "";
+  $("inhint").textContent = "";
+  $("invalidnote").textContent = "";
+  $("infpv").textContent = "…";
+}
 // Controls shown, blur left exactly as it stands — for typed or calculated
 // words. The eye, copy and QR serve hand-entered seeds too, and a box that
 // was hidden when typing began stays hidden, so a passer-by never sees the
@@ -4105,10 +4132,12 @@ $("go").onclick = calculate;
 $("test").onclick = selfTest;
 $("ex").onclick = () => { $("in").value = "abandon ".repeat(11).trim(); calculate(); };
 $("clr").onclick = () => {
+  // Clear has to scrub, not merely hide: it used to leave the ending word and
+  // the fingerprint sitting in the document, so a page saved after pressing it
+  // still carried them.
   shieldReset();
-  $("in").value = ""; $("out").style.display = "none"; $("testout").style.display = "none";
-  $("randnote").style.display = "none"; $("meter").style.display = "none";
-  $("st").textContent = ""; current = []; prefix = [];
+  scrubDerived();
+  $("in").value = "";
 };
 addEventListener("online", netBadge);
 addEventListener("offline", netBadge);
@@ -4128,11 +4157,17 @@ addEventListener("pageshow", e => {
 netBadge();
 
 // A copy saved from the browser (File → Save Page As) serializes the live DOM
-// — the shield class, the visible controls — but not the seed itself, so a
-// snapshot saved mid-use wakes up with a smudged placeholder and orphaned
-// buttons beside an empty box. Reconcile with what the box actually holds.
+// but NOT the seed, because a textarea's value never becomes part of the
+// document. Everything derived from it does get written, though — including
+// the note that names the ending word and the master fingerprint — so a copy
+// saved mid-use opens carrying a word of somebody's seed and the identity of
+// their wallet, under a green line claiming a complete seed sits in a box that
+// is empty. Scrub all of it on arrival; nothing here is worth keeping.
+qrHide();
+scrubDerived();
 if ($("in").value.trim()) shieldOn();
 else shieldReset();
+updateMeter();
 </script>
 </body>
 </html>

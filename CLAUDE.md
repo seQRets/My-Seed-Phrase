@@ -54,7 +54,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 14 of 14", then "## Verify your download" with the
-   shasum block. Current release: v1.6.6.
+   shasum block. Current release: v1.6.7.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -64,9 +64,17 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    close. Fingerprints are never blurred (identify, can't open). Coming back
    via the back button re-blurs whatever is in the box and wipes the QR —
    nothing is ever erased, because a phrase being copied down must not vanish.
-   A copy saved with File → Save Page As serializes the live DOM (shield
-   class, visible controls) but not the seed, so the page reconciles with the
-   box's actual content at load — an empty box sheds any serialized state.
+   A copy saved with File → Save Page As serializes the live DOM but not the
+   seed, so the page reconciles with the box's actual content at load — an
+   empty box sheds any serialized state. Reconciling is not enough on its own:
+   everything derived from a seed is written into the document, including the
+   note naming the chosen ending (a real seed word) and the master
+   fingerprint, and hidden text is still text in a saved file. scrubDerived()
+   therefore CLEARS those values rather than hiding them, and runs both on
+   Clear and at load. verify.js plants a seed word and a fingerprint in its
+   /snapshot page and fails if either survives the page opening. Never add a
+   place where a seed-derived value is written into the DOM without adding it
+   to scrubDerived().
    Modal layout: fingerprint sits directly under the QR (outside .qrbox, so the
    blur never covers it), the download warning directly under that, then two
    sentences with the longer explanation folded into a <details>. The card is a
@@ -111,7 +119,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 55 checks: drives real Chrome headless, checks
+    node verify.js            # 56 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,

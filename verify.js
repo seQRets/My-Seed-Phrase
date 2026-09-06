@@ -24,6 +24,14 @@ const { pathToFileURL } = require('url');
 
 const ROOT = __dirname;
 const PAGE = path.join(ROOT, 'index.html');
+// Planted in the /snapshot page below: the note naming a word of a seed, and a
+// wallet's master fingerprint, exactly as File → Save Page As would write them
+// into a copy saved mid-use. Neither may survive the page opening. The whole
+// sentence is matched rather than the bare word, because every BIP-39 word —
+// "midnight" included — is in the wordlist this file embeds.
+const SNAP_WORD = 'midnight';
+const SNAP_NOTE = `“${SNAP_WORD}” is word 12 — the completed seed is in the box at the top.`;
+const SNAP_FP = '45618c53';
 const WORDLIST_SHA256 = '2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda';
 // Tripwire. assess() is tuned so genuine random draws almost never trip a
 // warning while every hand-picking pattern is still caught; changing it without
@@ -791,13 +799,28 @@ async function guardChecks(browser, base) {
   await p.goto(base + '/snapshot');
   r = await p.evaluate(`${HELPERS}
     if(!await wait(()=>document.readyState==='complete')) return {err:'load timeout'};
+    const doc = document.documentElement.outerHTML;
     return { healed: !$('in').classList.contains('shield'),
       wrapCleared: !$('inwrap').classList.contains('on'),
       controlsHidden: $('inctl').style.display==='none',
-      placeholderCrisp: getComputedStyle($('in'),'::placeholder').textShadow==='none' };`);
+      placeholderCrisp: getComputedStyle($('in'),'::placeholder').textShadow==='none',
+      // the derived furniture must be gone from view...
+      endingsHidden: $('out').style.display==='none',
+      gridEmpty: document.querySelectorAll('#grid .w').length===0,
+      statusEmpty: $('st').textContent==='',
+      noteEmpty: $('randnote').textContent==='',
+      meterHidden: $('meter').style.display==='none',
+      // ...and the two secrets must be gone from the FILE, not merely hidden
+      wordScrubbed: !doc.includes(${JSON.stringify(SNAP_NOTE)}),
+      fpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP)}) };`);
   chk('a copy saved mid-use heals its snapshot state on open', !r.err
-      && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp,
+      && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp
+      && r.endingsHidden && r.gridEmpty && r.statusEmpty && r.noteEmpty
+      && r.meterHidden,
       r.err || JSON.stringify(r));
+  chk('a saved copy carries out no seed word and no fingerprint',
+      !r.err && r.wordScrubbed && r.fpScrubbed,
+      r.err || `word left: ${!r.wordScrubbed}, fingerprint left: ${!r.fpScrubbed}`);
 
   await p.close();
 }
@@ -868,14 +891,34 @@ async function calibrate(browser, fileUrl) {
       return res.end('<!doctype html><title>away</title><body>elsewhere');
     }
     if (req.url.startsWith('/snapshot')) {
-      // index.html the way File → Save Page As writes it mid-use: the live
-      // DOM's shield class and visible controls serialized in, the seed not
+      // index.html the way File → Save Page As writes it mid-use: everything
+      // the page derived from a seed serialized in, the seed itself not. The
+      // two values that matter are SNAP_WORD, an actual word of the seed, and
+      // SNAP_FP, the wallet's master fingerprint — the page must not carry
+      // either of them out of a saved file.
       return fs.readFile(path.join(ROOT, 'index.html'), 'utf8', (err, s) => {
         if (err) { res.writeHead(404); return res.end(); }
+        const chips = Array.from({length: 128},
+          (_, i) => `<div class="w">cand${i}</div>`).join('');
         s = s.replace('<textarea id="in"', '<textarea class="shield" id="in"')
-             .replace('<div class="inwrap" id="inwrap">', '<div class="inwrap on" id="inwrap">')
+             .replace('<div class="inwrap" id="inwrap">', '<div class="inwrap on fp" id="inwrap">')
              .replace('<div class="inctl" id="inctl" style="display:none">',
-                      '<div class="inctl" id="inctl" style="display: flex;">');
+                      '<div class="inctl" id="inctl" style="display: flex;">')
+             .replace('<div class="card" id="out" style="display:none">',
+                      '<div class="card" id="out" style="display: block;">')
+             .replace('<div class="h on" id="outlbl"></div>',
+                      '<div class="h on" id="outlbl">Word 12 · 128 valid endings</div>')
+             .replace('<div class="grid" id="grid"></div>',
+                      `<div class="grid" id="grid">${chips}</div>`)
+             .replace('<div class="hint" id="randnote" style="display:none"></div>',
+                      `<div class="hint" id="randnote" style="display: block;">${SNAP_NOTE}</div>`)
+             .replace('<div class="status" id="st"></div>',
+                      '<div class="status ok" id="st">✓  Complete 12-word seed in the box above.</div>')
+             .replace('<b id="infpv">…</b>', `<b id="infpv">${SNAP_FP}</b>`)
+             .replace('<div class="infp" id="infp" style="display:none">',
+                      '<div class="infp" id="infp" style="display: block;">')
+             .replace('<div class="meter" id="meter" style="display:none">',
+                      '<div class="meter" id="meter" style="display: block;">');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(s);
       });
