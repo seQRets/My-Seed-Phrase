@@ -843,9 +843,11 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <p>It does three jobs. <b>Finish a seed:</b> if you chose your first 11, 14, 17, 20 or
         23 words yourself — by dice, by hand, or with another tool — a wallet will still reject
         the phrase unless the last word carries the right checksum. Type your words in and this
-        page computes every last word that works. <b>Create a seed:</b> the generate buttons
-        draw a brand-new valid seed phrase from your browser's cryptographic randomness,
-        entirely on your machine. <b>Understand a seed:</b> the questions below explain why the
+        page computes every last word that works. <b>Create a seed:</b> two ways, both entirely on
+        your machine. The generate buttons draw a brand-new phrase from your browser's
+        cryptographic randomness; or roll a die yourself, type the numbers in, and the app
+        turns your rolls into the words — slower, and the one route that does not ask you to
+        trust the browser's randomness at all. <b>Understand a seed:</b> the questions below explain why the
         last word is special, what the checksum does, and what makes a phrase strong or weak.
         For a seed that will guard real money, follow the six steps at the top and run this
         page offline first.</p>
@@ -862,7 +864,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         words, calculates the endings, and picks one at random too. The finished, wallet-ready
         phrase lands in the box, blurred until the eye button reveals it.</p>
         <p><b>Pick at random</b> — once endings are listed, lets the browser's cryptographic
-        generator choose one for you instead of you clicking a favourite.</p>
+        generator choose one for you instead of you clicking a favourite.
+        <b>Roll</b> — opens the dice route: choose the length you want, roll a six-sided die
+        that many times, and type each number as you go. The count tells you how many rolls
+        are still needed — 50 for a 12-word seed, 100 for 24. <b>Make a seed</b> turns the
+        finished rolls into words, <b>Clear rolls</b> wipes them, and <b>Hide rolls</b> covers
+        them the way the eye button covers the words.</p>
         <p><b>Load example</b> — fills the box with the BIP-39 standard's published test
         phrase. Safe to experiment with; never use it for real funds.</p>
         <p><b>Verify this page</b> — runs the built-in self-test: the page recomputes answers
@@ -937,6 +944,29 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         including the ending in one press, and <b>Generate partial seed</b> stops one word
         short so you can see the checksum at work and choose the ending yourself. Either way
         ends at the same place: a phrase whose every word came from the generator.</p>
+        <p>One route does not use it at all. Roll your own dice, type the numbers in, and your
+        rolls decide every word — the app only does the arithmetic. That is the slow way, and
+        the only one that does not ask you to take either the browser's generator or this page
+        on trust. The same rolls always make the same words, so a hardware wallet given those
+        same rolls can be used to check this page's answer rather than believe it.</p>
+      </details>
+
+      <details>
+        <summary>What do the dice actually do?</summary>
+        <p>Each throw of a six-sided die is one of six equally likely results, and the app
+        collects enough of them to decide every word — 50 throws for a 12-word seed, 100 for a
+        24-word one, with a running count so you know when you have enough. Nothing is drawn
+        from the browser. Your throws decide all of the words, including the last one, which
+        also carries the check that makes a wallet accept the phrase.</p>
+        <p>The same throws always make the same seed. That is the point of doing it this way:
+        a hardware wallet given those same throws should produce the same words, which lets you
+        check this page rather than believe it. It also means the numbers are exactly as secret
+        as the phrase — anyone who has them can work out every word, on any computer, for ever.
+        Keep them until the words are written down and checked, then destroy the paper you
+        threw onto.</p>
+        <p>A cheap die is not perfectly fair. If you are unsure about yours, throw more than
+        the minimum: a lopsided die tells you less per throw, and the extra throws make up the
+        difference.</p>
       </details>
 
       <details>
@@ -966,6 +996,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         hardware wallet builds the phrase on a device that does one job and never hands it to a
         computer running everything else you have installed. A browser on an ordinary computer
         cannot make that promise, which is why the steps above are worth following.</p>
+        <p>Dice close part of the gap. Roll them yourself and the words no longer rest on the
+        browser's generator being sound, or on this page being the copy that was published:
+        the randomness came off your table. The computer is still the computer, so the six
+        steps still matter — but it is one less thing to take on trust.</p>
       </details>
 
       <div class="grp2">Trust and privacy</div>
@@ -1059,7 +1093,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.1 · RUNS OFFLINE</div>
+    <div class="r">v1.7.2 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
