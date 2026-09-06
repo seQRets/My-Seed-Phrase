@@ -312,6 +312,38 @@ async function pageChecks(browser, fileUrl, httpUrl) {
   chk('a generated partial seed arrives blurred, QR withheld until complete',
     !partial.err && partial.blurred && partial.ctl && partial.qrHidden && partial.guided,
     partial.err || JSON.stringify(partial));
+  // typing never lifts a blur already engaged: a hidden box edited by hand
+  // stays hidden, so a passer-by cannot read what is being entered
+  const shieldTyping = await p.evaluate(`${HELPERS}
+    $('clr').click(); await wait(()=>$('out').style.display==='none');
+    const r={};
+    // typed into a fresh box: visible, then the eye hides it, then further
+    // typing must keep it hidden
+    $('in').value='abandon ability'; $('in').dispatchEvent(new Event('input'));
+    r.bornVisible = !$('in').classList.contains('shield');
+    $('peek').click();
+    r.hides = $('in').classList.contains('shield');
+    $('in').value='abandon ability able'; $('in').dispatchEvent(new Event('input'));
+    r.typingStaysHidden = $('in').classList.contains('shield')
+      && $('inctl').style.display!=='none';
+    // a generated seed is born hidden; hand-editing it must not reveal it
+    $('clr').click();
+    $('genlen').value='11'; $('genfull').click();
+    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
+    $('in').value = $('in').value + ' abandon';
+    $('in').dispatchEvent(new Event('input'));
+    r.editKeepsGeneratedHidden = $('in').classList.contains('shield');
+    // and once revealed, typing does not re-hide it
+    $('peek').click();
+    $('in').value = $('in').value + ' abandon'; $('in').dispatchEvent(new Event('input'));
+    r.visibleStaysVisible = !$('in').classList.contains('shield');
+    $('clr').click();
+    return r;`);
+  chk('typing never lifts an engaged blur, nor re-hides a revealed box',
+    !shieldTyping.err && shieldTyping.bornVisible && shieldTyping.hides
+      && shieldTyping.typingStaysHidden && shieldTyping.editKeepsGeneratedHidden
+      && shieldTyping.visibleStaysVisible,
+    shieldTyping.err || JSON.stringify(shieldTyping));
   if (gen.out) {
     const bad = gen.out.filter(x => !validate(x));
     chk(`all ${gen.out.length} generated phrases are valid BIP-39 (checked independently)`,

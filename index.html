@@ -858,7 +858,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.3 · RUNS OFFLINE</div>
+    <div class="r">v1.6.4 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3266,18 +3266,18 @@ function shieldReset() {
   $("infp").style.display = "none";
   clearSeedVerdict();
 }
-// Visible, unblurred, controls shown — for typed or calculated words. The
-// eye, copy and QR serve hand-entered seeds too; whole-seed state and the
-// now-stale fingerprint still clear.
-function showUnshielded() {
+// Controls shown, blur left exactly as it stands — for typed or calculated
+// words. The eye, copy and QR serve hand-entered seeds too, and a box that
+// was hidden when typing began stays hidden, so a passer-by never sees the
+// entry. Whole-seed state and the now-stale fingerprint still clear.
+function showControls() {
   whole = false;
   $("inwrap").classList.remove("fp");
   $("inhint").style.display = "none";
   $("infp").style.display = "none";
-  $("in").classList.remove("shield");
   $("inwrap").classList.add("on");
   $("inctl").style.display = "flex";
-  setPeek(true);
+  setPeek(!$("in").classList.contains("shield"));
   // The QR is only offered while the box holds a complete seed whose checksum
   // verifies — and that includes one typed in by hand, not just one this page
   // assembled. The fingerprint comes with it, and the field's border renders
@@ -3336,7 +3336,7 @@ function showBoxFingerprint() {
 
 async function calculate(reveal = true) {
   if (FRAMED) return false;
-  if ($("in").value.trim()) showUnshielded();
+  if ($("in").value.trim()) showControls();
   else shieldReset();
   const { words, err } = parse($("in").value);
   $("randnote").style.display = "none";
@@ -4091,10 +4091,11 @@ $("wlhash").onclick = () => {
   $("wlhash").title = open ? "Show the whole value" : "Shorten";
 };
 $("in").addEventListener("input", () => {
-  // typing must stay visible, so the blur lifts — but the eye, copy and QR
-  // controls serve hand-entered seeds too: they show whenever the box has
-  // content and leave only when it is empty
-  if ($("in").value.trim()) showUnshielded();
+  // typing keeps whatever blur is engaged — a box hidden when typing began
+  // stays hidden, so a passer-by never sees the entry — and the eye, copy
+  // and QR controls show whenever the box has content, leaving only when it
+  // is empty
+  if ($("in").value.trim()) showControls();
   else shieldReset();
   updateMeter();
 });
