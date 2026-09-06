@@ -74,7 +74,18 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    Clear and at load. verify.js plants a seed word and a fingerprint in its
    /snapshot page and fails if either survives the page opening. Never add a
    place where a seed-derived value is written into the DOM without adding it
-   to scrubDerived().
+   to scrubDerived() — the entropy bar was one such place, carrying the last
+   seed's band and score in an inline style until v1.6.8.
+   Note the limit the scrub cannot cross. Save Page As writes the live DOM, so
+   the file created at that moment holds whatever was on screen: the chosen
+   ending, the note naming it, the fingerprint, and the marked chip in the
+   endings grid. The scrub runs when that file is next OPENED, not when it is
+   written, and a backup, a cloud sync or a text editor reads the bytes rather
+   than the render. So say "sheds them on opening", never "a saved copy carries
+   none". verify.js plants all three carriers in /snapshot — the note, the
+   marked chip and the fingerprint — and matches each as a whole element or
+   sentence, never as a bare word: every BIP-39 word is in the embedded list,
+   so a bare-word search can only ever pass.
    Modal layout: fingerprint sits directly under the QR (outside .qrbox, so the
    blur never covers it), the download warning directly under that, then two
    sentences with the longer explanation folded into a <details>. The card is a
@@ -184,8 +195,18 @@ runs on your machine at push time. Read the diff on that file like any other.
   the secret's lifetime over an old Safari quirk that can produce an empty
   file. Deliberate; revisit only if a real empty-download report arrives.
 
-Design: dark-first + light theme (toggle persists), Bitcoin orange #F7931A
+Design: light ships as the default for everyone and the toggle pins dark (it
+persists; the OS preference is deliberately not read), Bitcoin orange #F7931A
 (#9C5206 for small text on light), system fonts only, ≥4.5:1 for new colors.
+
+Type scale: --fs-2xs .62 / --fs-xs .72 / --fs-sm .82 / --fs-md .95 / --fs-lg
+1.15 / --fs-xl 1.35 rem, identical to the sister app so the two read as one
+family. Reach for a token, not a number. Three things sit outside it on purpose:
+the clamp() headings, which are fluid; relative em on glyphs and icons, which
+should track whatever they sit beside; and the fixed px on the seed box (15px)
+and the candidate chips (14px, index 11px), where a monospace grid has to stay
+predictable — those are what invariant 9 measures at 320px, so moving them means
+re-running the layout checks and expecting them to matter.
 
 Local preview: .claude/launch.json defines "checksum" (python3 http.server on
 port 8899).

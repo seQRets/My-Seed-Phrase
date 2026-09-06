@@ -29,6 +29,14 @@
     --shadow:0 1px 2px rgba(27,24,20,.04),0 8px 24px rgba(27,24,20,.05);
     --sans:-apple-system,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+    /* One type scale, shared with the sister app at mypassphrase.app so the two
+       read as one family. It governs TEXT. Three things stay outside it and are
+       meant to: the clamp() headings, which are fluid by design; relative em on
+       glyphs and icons, which should track whatever they sit beside; and the
+       fixed px on the seed box and the candidate chips, where a monospace grid
+       has to stay predictable at 320px (invariant 9). */
+    --fs-2xs:.62rem; --fs-xs:.72rem; --fs-sm:.82rem;
+    --fs-md:.95rem;  --fs-lg:1.15rem; --fs-xl:1.35rem;
   }
   :root[data-theme="dark"]{
     color-scheme:dark;
@@ -64,12 +72,12 @@
   /* ---- kicker + hero ---- */
   .topline{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.4rem}
   .kicker{display:flex;align-items:center;gap:14px;min-width:0}
-  #theme{flex:none;padding:.45rem .8rem;font-size:.68rem}
+  #theme{flex:none;padding:.45rem .8rem;font-size:var(--fs-xs)}
   /* The logo is inlined, not linked: an <img src> would be an internet request and
      break the one promise this page makes. Source: BIP-39-logo.svg, which
      verify.js checks against this copy so the two cannot drift apart. */
   .kicker .mark{width:30px;height:30px;flex:none;display:block}
-  .kicker .label{font-size:.75rem;font-weight:700;letter-spacing:.32em;color:var(--accent-ink)}
+  .kicker .label{font-size:var(--fs-xs);font-weight:700;letter-spacing:.32em;color:var(--accent-ink)}
   h1{font-size:clamp(2.1rem,5.5vw,3.5rem);font-weight:800;letter-spacing:-.02em;
      line-height:1.04;margin-bottom:1rem}
   h1 em{color:var(--accent-ink);font-style:normal}
@@ -78,12 +86,12 @@
   /* ---- hero call-to-action: the "how do I do it" answer ---- */
   .ctarow{display:flex;align-items:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap}
   .cta{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
-    font-size:.82rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+    font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;text-transform:uppercase;
     padding:.85rem 1.4rem;border-radius:9px;background:var(--orange);color:#000;
     border:1px solid var(--orange);transition:background .15s,border-color .15s}
   .cta:hover{background:var(--gold);border-color:var(--gold)}
   .cta:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-  .ctanote{font-size:.78rem;color:var(--dim);letter-spacing:.02em}
+  .ctanote{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.02em}
   /* ---- tooltips: hover/focus on desktop, tap on mobile (JS toggles .on) ---- */
   .tipwrap{position:relative;display:inline-flex;align-items:center}
   /* solid ink chip — a pale outline disappeared on the light ground. The
@@ -97,7 +105,7 @@
   .tipbox{position:absolute;top:calc(100% + .65rem);left:50%;transform:translateX(-50%);
     z-index:30;width:min(21rem,84vw);background:var(--bg);border:1px solid var(--line);
     border-radius:12px;padding:.85rem 1.05rem;box-shadow:0 8px 30px rgba(0,0,0,.45);
-    font:400 .82rem/1.7 var(--sans);letter-spacing:.01em;text-transform:none;
+    font:400 var(--fs-sm)/1.7 var(--sans);letter-spacing:.01em;text-transform:none;
     color:var(--muted);text-align:left;opacity:0;visibility:hidden;
     transition:opacity .15s;pointer-events:none}
   .tipbox b{color:var(--ink)}
@@ -105,13 +113,13 @@
   .tipwrap:hover .tipbox,.tipwrap:focus-within .tipbox,.tipwrap.on .tipbox{
     opacity:1;visibility:visible;pointer-events:auto}
   /* the title's trigger must not inherit the headline size */
-  h1 .tipwrap{font-size:1.05rem;vertical-align:super;margin-left:.6rem}
+  h1 .tipwrap{font-size:var(--fs-md);vertical-align:super;margin-left:.6rem}
 
   .stats{display:flex;gap:clamp(2rem,6vw,4.5rem);margin:2.6rem 0 2.2rem;flex-wrap:wrap}
   .stat .num{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:800;letter-spacing:-.02em;
              line-height:1;white-space:nowrap}
   .stat .num span{color:var(--accent-ink)}
-  .stat .lab{font-size:.7rem;color:var(--dim);letter-spacing:.14em;font-weight:600;
+  .stat .lab{font-size:var(--fs-xs);color:var(--dim);letter-spacing:.14em;font-weight:600;
              margin-top:.5rem;text-transform:uppercase}
 
   /* ---- cards ---- */
@@ -119,12 +127,12 @@
         padding:clamp(2rem,4.2vw,2.9rem) clamp(1.4rem,3vw,2.1rem);
         margin-bottom:1.15rem;box-shadow:var(--shadow)}
   .card.hot{border-color:rgba(247,147,26,0.55);background:rgba(247,147,26,0.06)}
-  .h{font-size:.72rem;font-weight:700;letter-spacing:.22em;color:var(--dim);
+  .h{font-size:var(--fs-xs);font-weight:700;letter-spacing:.22em;color:var(--dim);
      text-transform:uppercase;margin-bottom:1.1rem}
   .cardhead{display:flex;align-items:flex-start;justify-content:space-between;gap:.6rem 1rem;
     flex-wrap:wrap}
   .cardhead #rand{flex:none;margin-top:-.35rem;margin-bottom:1.1rem}
-  button.x{flex:none;margin-top:-.4rem;padding:.1rem .5rem .25rem;font-size:1.25rem;
+  button.x{flex:none;margin-top:-.4rem;padding:.1rem .5rem .25rem;font-size:var(--fs-xl);
     line-height:1;font-weight:400;letter-spacing:0;text-transform:none;
     border-color:transparent;background:transparent;color:var(--dim)}
   button.x:hover{color:var(--ink);border-color:var(--line);background:var(--panel2)}
@@ -132,7 +140,7 @@
 
   /* ---- online/offline badge ---- */
   .badge{display:inline-flex;align-items:center;gap:.55rem;padding:.4rem .85rem;
-    border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.14em;
+    border-radius:999px;font-size:var(--fs-xs);font-weight:700;letter-spacing:.14em;
     text-transform:uppercase;border:1px solid;margin-bottom:1.1rem}
   .badge .led{width:8px;height:8px;border-radius:50%;flex:none}
   .badge.on{color:var(--accent-ink);border-color:rgba(247,147,26,.45);background:rgba(247,147,26,.07)}
@@ -156,9 +164,9 @@
      purpose: it identifies the wallet but cannot open it. */
   .inwrap.fp textarea{padding-bottom:2.2rem}
   .infp{position:absolute;left:1.1rem;bottom:.7rem;pointer-events:none;
-    font-size:.68rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    font-size:var(--fs-xs);font-weight:700;letter-spacing:.14em;text-transform:uppercase;
     color:var(--dim)}
-  .infp b{font:700 .9rem var(--mono);letter-spacing:.06em;color:var(--code-ink);
+  .infp b{font:700 var(--fs-md) var(--mono);letter-spacing:.06em;color:var(--code-ink);
     text-transform:none;vertical-align:-.05em}
   .inctl{position:absolute;top:.6rem;right:.8rem;display:flex;gap:.35rem}
   .ictl{padding:.4rem;border-radius:7px;line-height:0;cursor:pointer;
@@ -172,17 +180,17 @@
      when it does not. Declared after :focus so the verdict wins while typing. */
   textarea.okseed{border-color:rgba(54,211,153,.75);box-shadow:0 0 0 3px rgba(54,211,153,.13)}
   textarea.badseed{border-color:rgba(248,113,113,.85);box-shadow:0 0 0 3px rgba(248,113,113,.13)}
-  .invalidnote{display:none;font-size:.9rem;font-weight:600;color:var(--red-ink);
+  .invalidnote{display:none;font-size:var(--fs-md);font-weight:600;color:var(--red-ink);
     margin-top:.7rem}
   .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:1rem}
-  button{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:.1em;
+  button{font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;
     text-transform:uppercase;padding:.7rem 1.15rem;border-radius:9px;cursor:pointer;
     border:1px solid var(--line);background:var(--panel);color:var(--muted);
     transition:border-color .15s,color .15s,background .15s}
   button:hover{border-color:rgba(247,147,26,.5);color:var(--ink)}
   button.primary{background:var(--orange);border-color:var(--orange);color:#000}
   button.primary:hover{background:var(--gold);border-color:var(--gold);color:#000}
-  .hint{font-size:.78rem;color:var(--dim);margin-top:.9rem;letter-spacing:.02em}
+  .hint{font-size:var(--fs-sm);color:var(--dim);margin-top:.9rem;letter-spacing:.02em}
   /* Saving is the only thing on this page that leaves the seed behind after
      the tab is shut, so its warning is not dim like the rest — it is red, and
      it is read before anything is written, not after. */
@@ -195,15 +203,15 @@
   /* the modal is a panel, not a page: the shared details/summary sizes are
      tuned for body copy and read as shouting in here */
   .qrcard .hint details{margin-top:.75rem}
-  .qrcard .hint details p{font-size:.78rem;line-height:1.7;margin-top:.55rem}
-  .qrcard summary{font-size:.66rem;letter-spacing:.12em}
-  #qrdlgo{display:block;margin-top:.75rem;font-family:var(--sans);font-size:.72rem;
+  .qrcard .hint details p{font-size:var(--fs-sm);line-height:1.7;margin-top:.55rem}
+  .qrcard summary{font-size:var(--fs-xs);letter-spacing:.12em}
+  #qrdlgo{display:block;margin-top:.75rem;font-family:var(--sans);font-size:var(--fs-xs);
     font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1;
     padding:.65rem 1rem;border-radius:9px;cursor:pointer;
     border:1px solid var(--red-ink);background:transparent;color:var(--red-ink)}
   #qrdlgo:hover{background:var(--red-ink);color:var(--bg)}
   #qrdlgo:focus-visible{outline:2px solid var(--red-ink);outline-offset:2px}
-  select{font-family:var(--sans);font-size:.82rem;font-weight:700;letter-spacing:.08em;
+  select{font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;letter-spacing:.08em;
     text-transform:uppercase;padding:.7rem 2.2rem .7rem .8rem;border-radius:9px;cursor:pointer;
     border:1px solid var(--line);color:var(--muted);max-width:100%;
     /* the browser draws its own arrow hard against the border; this replaces it
@@ -224,28 +232,28 @@
   .meter{margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--line2)}
   #inputcard,#meter{scroll-margin-top:1.25rem}
   .mrow{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-bottom:.55rem}
-  .mlab{font-size:.7rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
-  .mval{font:700 .95rem var(--mono)}
+  .mlab{font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .mval{font:700 var(--fs-md) var(--mono)}
   .bar{height:6px;border-radius:999px;background:var(--panel2);
        border:1px solid var(--line2);overflow:hidden}
   .fill{height:100%;width:0;border-radius:999px;transition:width .3s ease,background .3s ease}
-  .mnote{font-size:.8rem;color:var(--muted);margin-top:.7rem;line-height:1.6}
+  .mnote{font-size:var(--fs-sm);color:var(--muted);margin-top:.7rem;line-height:1.6}
   .mnote b{color:var(--ink);font-weight:700}
   .ok-c{color:var(--green-ink)} .warn-c{color:var(--accent-ink)} .bad-c{color:var(--red-ink)}
-  .status{font-size:.92rem;margin-top:1rem;min-height:1.4em;font-weight:600}
+  .status{font-size:var(--fs-md);margin-top:1rem;min-height:1.4em;font-weight:600}
   /* an empty status was silently reserving a line below the buttons, making
      the card bottom-heavy — take it out of flow until it has something to say */
   .status:empty{display:none}
   /* ---- footer credits fold behind a small disclosure ---- */
   .creds{flex-basis:100%;margin-top:1.2rem}
   .creds>summary{display:flex;align-items:center;gap:.5rem;color:var(--dim);
-    font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+    font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase}
   .creds>summary:hover{color:var(--accent-ink)}
   .creds>summary::before{content:'❯';color:var(--accent-ink);display:inline-block;
     font-size:1.2em;line-height:1;transform:none;transition:transform .2s ease}
   .creds[open]>summary::before{content:'❯';transform:rotate(90deg)}
   .creds>.prov{margin-top:.9rem}
-  .copyline{flex-basis:100%;font-size:.72rem;color:var(--dim);margin-top:1.4rem;
+  .copyline{flex-basis:100%;font-size:var(--fs-xs);color:var(--dim);margin-top:1.4rem;
     letter-spacing:.02em;text-transform:none;font-weight:400}
   .status.bad{color:var(--red-ink)} .status.ok{color:var(--green-ink)}
 
@@ -279,7 +287,7 @@
     box-shadow:var(--shadow)}
   .qrhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
   .qrhead .h{margin-bottom:0}
-  button.qrx{padding:.1rem .5rem .25rem;font-size:1.25rem;line-height:1;font-weight:400;
+  button.qrx{padding:.1rem .5rem .25rem;font-size:var(--fs-xl);line-height:1;font-weight:400;
     letter-spacing:0;text-transform:none}
   .qrbox{background:#fff;border-radius:12px;padding:10px;line-height:0;
     display:block;width:fit-content;margin:0 auto}
@@ -290,32 +298,32 @@
   .qrtools{display:flex;gap:.35rem;align-items:center}
   /* deliberately outside .qrbox, so the blur never covers it — a fingerprint
      identifies the wallet but cannot open it */
-  .qrfp{margin-top:.9rem;font-size:.72rem;font-weight:700;letter-spacing:.14em;
+  .qrfp{margin-top:.9rem;font-size:var(--fs-xs);font-weight:700;letter-spacing:.14em;
     text-transform:uppercase;color:var(--dim)}
-  .qrfp b{font:700 .95rem var(--mono);letter-spacing:.06em;color:var(--code-ink);
+  .qrfp b{font:700 var(--fs-md) var(--mono);letter-spacing:.06em;color:var(--code-ink);
     text-transform:none;vertical-align:-.05em}
 
   /* ---- tables ---- */
   .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:26rem}
+  table{border-collapse:collapse;width:100%;font-size:var(--fs-md);min-width:26rem}
   th{text-align:left;padding:.5rem .6rem;color:var(--dim);font-weight:700;
-     font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+     font-size:var(--fs-xs);letter-spacing:.16em;text-transform:uppercase;
      border-bottom:1px solid var(--line)}
   td{padding:.6rem;border-bottom:1px solid var(--line2);color:var(--muted)}
   tr:last-child td{border-bottom:none}
   td.k{color:var(--ink);font-weight:600}
   td.v{font-family:var(--mono);color:var(--ink)}
-  tr.grp td{padding:1.1rem .6rem .4rem;font-size:.68rem;font-weight:700;
+  tr.grp td{padding:1.1rem .6rem .4rem;font-size:var(--fs-xs);font-weight:700;
     letter-spacing:.18em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line)}
   tr.grp:first-child td{padding-top:0}
-  .verdict{font-size:1.05rem;font-weight:800;letter-spacing:-.01em;margin-bottom:.4rem}
-  .verdict-sub{font-size:.9rem;color:var(--muted);line-height:1.6;margin-bottom:.5rem}
-  .verdict-caveat{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:1.1rem;
+  .verdict{font-size:var(--fs-lg);font-weight:800;letter-spacing:-.01em;margin-bottom:.4rem}
+  .verdict-sub{font-size:var(--fs-md);color:var(--muted);line-height:1.6;margin-bottom:.5rem}
+  .verdict-caveat{font-size:var(--fs-sm);color:var(--muted);line-height:1.6;margin-bottom:1.1rem;
     border-left:2px solid var(--orange);padding:.5rem .9rem;background:rgba(247,147,26,.05);
     border-radius:0 8px 8px 0}
   .verdict-caveat b{color:var(--ink)}
-  .pass{color:var(--green-ink);font-weight:700;letter-spacing:.1em;font-size:.74rem;text-transform:uppercase}
-  .fail{color:var(--red-ink);font-weight:700;letter-spacing:.1em;font-size:.74rem;text-transform:uppercase}
+  .pass{color:var(--green-ink);font-weight:700;letter-spacing:.1em;font-size:var(--fs-xs);text-transform:uppercase}
+  .fail{color:var(--red-ink);font-weight:700;letter-spacing:.1em;font-size:var(--fs-xs);text-transform:uppercase}
   code{font-family:var(--mono);font-size:.86em;color:var(--code-ink);
        background:var(--code-bg);padding:.12em .4em;border-radius:4px;
        overflow-wrap:anywhere}
@@ -323,23 +331,23 @@
   /* ---- notes / bullets ---- */
   ul{list-style:none}
   .warn ol{margin:1.15rem 0 .4rem;padding-left:1.5rem}
-  .warn ol li{font-size:.88rem;line-height:1.7;padding-left:.35rem;margin-bottom:.8rem;
+  .warn ol li{font-size:var(--fs-md);line-height:1.7;padding-left:.35rem;margin-bottom:.8rem;
     list-style:decimal}
   .warn ol li::before{content:none}
   .warn details{margin-top:0}
-  .warn details p{font-size:.88rem;line-height:1.7;margin-top:1.05rem}
+  .warn details p{font-size:var(--fs-md);line-height:1.7;margin-top:1.05rem}
   /* room between the header and the guide it reveals */
   .warn details[open] summary{margin-bottom:1.2rem}
   /* the offline-guide disclosure: one clean line, larger type, and the same
      rotating chevron as the Q&A header instead of the little triangle */
   .warn summary{display:flex;align-items:center;gap:.6rem;color:var(--ink);
-    font-size:.95rem;font-weight:800;letter-spacing:.16em}
+    font-size:var(--fs-md);font-weight:800;letter-spacing:.16em}
   .warn summary:hover{color:var(--accent-ink)}
   .warn summary::before{content:'❯';color:var(--accent-ink);display:inline-block;
     font-size:1.25em;line-height:1;margin-right:0;
     transform:none;transition:transform .2s ease}
   .warn details[open] summary::before{content:'❯';transform:rotate(90deg)}
-  li{font-size:.95rem;color:var(--muted);line-height:1.5;padding-left:1.4rem;
+  li{font-size:var(--fs-md);color:var(--muted);line-height:1.5;padding-left:1.4rem;
      position:relative;margin-bottom:.6rem}
   li::before{content:'';position:absolute;left:0;top:.55em;width:8px;height:8px;
     border-radius:50%;background:var(--orange);opacity:.7}
@@ -349,21 +357,21 @@
     background:rgba(247,147,26,.05);border-radius:0 12px 12px 0;
     /* the stats row used to hold the hero and this strip apart — now the strip
        spaces itself */
-    font-size:.92rem;color:var(--muted);margin:2.6rem 0 1.8rem}
+    font-size:var(--fs-md);color:var(--muted);margin:2.6rem 0 1.8rem}
   .warn b{color:var(--ink)}
   .qa details{margin:0;border-bottom:1px solid var(--line2)}
   /* No rule directly above a group heading — the heading's own border-top is the
      divider there, and both together read as a doubled line. */
   .qa details:last-child,.qa details:has(+ .grp2){border-bottom:none}
-  .qa summary{padding:.85rem 0;font-size:.95rem;font-weight:600;letter-spacing:0;
+  .qa summary{padding:.85rem 0;font-size:var(--fs-md);font-weight:600;letter-spacing:0;
     text-transform:none;color:var(--ink)}
   .qa summary:hover{color:var(--accent-ink)}
   .qa summary::before{content:'+';color:var(--orange);font-weight:700;
     display:inline-block;width:1.1rem}
   .qa details[open] summary::before{content:'–'}
-  .qa details p{margin:0 0 1rem;padding-left:1.1rem;font-size:.9rem;max-width:52rem}
+  .qa details p{margin:0 0 1rem;padding-left:1.1rem;font-size:var(--fs-md);max-width:52rem}
   .qa details .scroll{margin:0 0 1.1rem;padding-left:1.1rem}
-  .qa .grp2{font-size:.68rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  .qa .grp2{font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
     color:var(--dim);margin:1.7rem 0 .2rem;padding-top:1.3rem;border-top:1px solid var(--line)}
   .qa .grp2:first-child{margin-top:0;padding-top:0;border-top:none}
   /* ---- the whole Q&A folds behind one big disclosure ---- */
@@ -377,10 +385,10 @@
     font-size:1.1em;line-height:1;margin-right:0;vertical-align:0;
     transform:none;transition:transform .2s ease}
   .qatop[open]>summary::before{content:'❯';transform:rotate(90deg)}
-  .qacount{font-size:.72rem;font-weight:600;letter-spacing:.14em;color:var(--dim)}
+  .qacount{font-size:var(--fs-xs);font-weight:600;letter-spacing:.14em;color:var(--dim)}
   .qatop>.qa{margin-top:1.2rem}
   details{margin-top:1rem}
-  summary{cursor:pointer;color:var(--dim);font-size:.8rem;font-weight:700;
+  summary{cursor:pointer;color:var(--dim);font-size:var(--fs-sm);font-weight:700;
     letter-spacing:.14em;text-transform:uppercase;list-style:none}
   summary::-webkit-details-marker{display:none}
   /* the disclosure caret at the summary's own .8rem was easy to miss entirely;
@@ -388,7 +396,7 @@
   summary::before{content:'▸';color:var(--accent-ink);font-size:1.5em;
     line-height:0;vertical-align:-.1em;margin-right:.4em}
   details[open] summary::before{content:'▾'}
-  details p{font-size:.9rem;color:var(--muted);margin-top:.8rem;line-height:1.6}
+  details p{font-size:var(--fs-md);color:var(--muted);margin-top:.8rem;line-height:1.6}
 
   /* ---- framed-page guard ----
      Shown instead of the tool when another site has put this page in a frame.
@@ -397,14 +405,14 @@
   #framed{display:none}
   html[data-framed] .topbar,html[data-framed] main{display:none}
   html[data-framed] #framed{display:block;max-width:34rem;margin:14vh auto 0;
-    padding:0 1.4rem;font:400 1rem/1.75 var(--sans);color:var(--ink)}
+    padding:0 1.4rem;font:400 var(--fs-md)/1.75 var(--sans);color:var(--ink)}
   #framed p{margin:0 0 1rem}
   #framed b{color:var(--accent-ink)}
-  #framed .addr{display:block;margin:1.2rem 0;font:600 1.05rem/1.5 var(--mono);
+  #framed .addr{display:block;margin:1.2rem 0;font:600 var(--fs-lg)/1.5 var(--mono);
     color:var(--accent-ink);overflow-wrap:anywhere}
   footer{border-top:1px solid var(--line);margin-top:2.6rem;padding-top:1.5rem;
     display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap;
-    font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+    font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase}
   footer .l{color:var(--accent-ink)} footer .l span{color:var(--dim);font-weight:600}
   footer .r{color:var(--dim)}
   /* The page's only outbound links. An <a> costs nothing until it is clicked,
@@ -412,7 +420,7 @@
      part-way through typing a phrase does not lose the input box by navigating. */
   .flinks{flex-basis:100%;display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
   .flinks a{display:inline-flex;align-items:center;gap:.55rem;
-    font-size:.72rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    font-size:var(--fs-xs);font-weight:700;letter-spacing:.16em;text-transform:uppercase;
     padding:.6rem 1rem;border-radius:9px;text-decoration:none;
     border:1px solid var(--line);background:var(--panel);color:var(--muted);
     transition:border-color .15s,color .15s,background .15s}
@@ -428,7 +436,7 @@
     overflow-wrap:anywhere;text-align:left}
   .hash:hover{color:var(--ink)}
   .hash:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-  .prov{overflow-wrap:anywhere;font-size:.78rem;color:var(--dim);line-height:1.8;margin-top:1.1rem;
+  .prov{overflow-wrap:anywhere;font-size:var(--fs-sm);color:var(--dim);line-height:1.8;margin-top:1.1rem;
     letter-spacing:.01em;text-transform:none;font-weight:400;flex-basis:100%}
   @media(max-width:640px){ main{padding-top:3.5rem} .stats{gap:1.75rem} }
   /* On a phone the flex row wraps at whatever widths the labels happen to make,
@@ -458,7 +466,7 @@
   /* the generate labels are the longest on the page; the very narrowest
      screens need slightly smaller type to keep them on one line */
   @media(max-width:344px){
-    #genfull,#gen{font-size:.72rem;letter-spacing:.03em}
+    #genfull,#gen{font-size:var(--fs-xs);letter-spacing:.03em}
   }
 </style>
 <script>try{if(localStorage.getItem("bip39-theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}
@@ -535,21 +543,27 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       setting many people turn back on — and <b>Safari leaves them running in Private
       Browsing</b>. Use a separate browser profile with nothing added to it.</p>
       <ol>
-        <li>Save this page to your computer while you are still online. Step 5 is what
-            checks it has not been altered.</li>
+        <li>Download this page from the release page on GitHub while you are still online.
+            Use the download link there, not File → Save Page As — saving writes a different
+            file, and its fingerprint will not match. Every release publishes the file's
+            fingerprint beside it; compare yours before you open it. This is the one check
+            that catches a tampered copy.</li>
         <li>Make a fresh browser profile — Chrome/Edge: profile icon → Add; Firefox:
             <code>about:profiles</code> → Create a New Profile. Install nothing into it,
             sign in to nothing.</li>
         <li>Turn off Wi-Fi and unplug any internet cable.</li>
-        <li>Open a private window in that profile and drag the saved file onto it.</li>
+        <li>Open a private window in that profile and drag the downloaded file onto it.</li>
         <li>Check the badge below reads <b>Offline — safe to generate</b>, then press
             <b>Verify this page</b> and confirm it says <b>14 of 14 checks passed</b>.
             That makes the page work out answers already published in the BIP-39 standard
             and take a fingerprint of its own built-in word list — an altered copy gets
-            them wrong. It needs no connection, and it checks the page, not your
+            those wrong. What it cannot do is prove the words you are given are truly
+            random: no page can test that about itself, which is why step 1 is the one
+            that matters. It needs no connection, and it checks the page, not your
             computer.</li>
-        <li>Write the phrase down by hand — never the copy or download buttons — then quit
-            the browser completely before reconnecting.</li>
+        <li>Write the phrase down by hand — never the copy or download buttons. Do not save
+            the page again once a phrase is on screen: that writes what you can see to
+            disk. Then quit the browser completely before reconnecting.</li>
       </ol>
     </details>
   </div>
@@ -859,7 +873,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.6.7 · RUNS OFFLINE</div>
+    <div class="r">v1.6.8 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3288,6 +3302,11 @@ function scrubDerived() {
   $("mval").className = "mval";
   $("mval").textContent = "";
   $("mnote").innerHTML = "";
+  // The bar is drawn with inline width and colour, so hiding the meter leaves
+  // the last seed's score sitting in the document — no words, but the band and
+  // the rounded number. Drop the attribute rather than blanking the two
+  // properties, so a scrubbed copy matches the file as published.
+  $("mfill").removeAttribute("style");
   $("st").className = "status";
   $("st").textContent = "";
   $("inhint").textContent = "";
@@ -3470,15 +3489,27 @@ async function selfTest() {
   let calcOk = 0, low = false;
 
   for (const v of V) {
-    const got = await candidates(v.pre.split(" "));
-    if (got.some(w => IDX.get(w) < 1024)) low = true;
-    const hit = got.includes(v.want);
-    const pass = hit && got.length === v.count && new Set(got).size === got.length;
-    if (pass) calcOk++;
-    detail.push(row(v.label, `${v.note} — must end in “${v.want}”`,
-      (got.length === v.count ? `found all ${v.count} endings`
-                              : `found ${got.length} endings, expected ${v.count}`)
-      + (hit ? `, “${v.want}” among them` : `, but “${v.want}” is missing`), pass));
+    // A vector whose words have been taken out of the list throws rather than
+    // failing, and one throw here used to abandon the whole run — leaving
+    // "Checking…" on screen with no verdict at all. That is the worst possible
+    // answer to "has this page been tampered with": the reader is told nothing
+    // and may well assume the page is simply slow. Each vector answers for
+    // itself, so a tampered copy fails out loud and still reaches a total.
+    try {
+      const got = await candidates(v.pre.split(" "));
+      if (got.some(w => IDX.get(w) < 1024)) low = true;
+      const hit = got.includes(v.want);
+      const pass = hit && got.length === v.count && new Set(got).size === got.length;
+      if (pass) calcOk++;
+      detail.push(row(v.label, `${v.note} — must end in “${v.want}”`,
+        (got.length === v.count ? `found all ${v.count} endings`
+                                : `found ${got.length} endings, expected ${v.count}`)
+        + (hit ? `, “${v.want}” among them` : `, but “${v.want}” is missing`), pass));
+    } catch (e) {
+      detail.push(row(v.label, `${v.note} — must end in “${v.want}”`,
+        "could not be worked out at all — the built-in word list is not the one "
+        + "this page was built with", false));
+    }
   }
   detail.push(row("Covers the whole word list",
     "endings must be able to come from anywhere in the 2048 words, not just the back half",

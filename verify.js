@@ -154,6 +154,13 @@ async function openPage(browser, url) {
 const SRC = fs.readFileSync(PAGE, 'utf8');
 const WORDS = SRC.match(/const WORDS = "([^"]+)"\.split\(" "\);/)[1].split(' ');
 const IDX = new Map(WORDS.map((w, i) => [w, i]));
+// The third carrier of a seed word, alongside the note and the fingerprint: the
+// endings grid marks the chosen chip, and that chip IS a word of the seed. Built
+// exactly as calculate() builds it, so the snapshot is what Save Page As would
+// really have written. Matched as the whole element for the same reason the note
+// is matched as a whole sentence — the bare word is in the embedded wordlist.
+const SNAP_CHIP = `<div class="w sel"><span>${SNAP_WORD}</span>`
+                + `<span class="i">${IDX.get(SNAP_WORD)}</span></div>`;
 
 // bits -> entropy bytes -> sha256 -> compare the checksum the standard's way
 function validate(phrase) {
@@ -810,17 +817,21 @@ async function guardChecks(browser, base) {
       statusEmpty: $('st').textContent==='',
       noteEmpty: $('randnote').textContent==='',
       meterHidden: $('meter').style.display==='none',
-      // ...and the two secrets must be gone from the FILE, not merely hidden
+      // ...and all three secrets must be gone from the FILE, not merely hidden:
+      // the note naming the ending, the marked chip that IS that ending, and
+      // the fingerprint
       wordScrubbed: !doc.includes(${JSON.stringify(SNAP_NOTE)}),
+      chipScrubbed: !doc.includes(${JSON.stringify(SNAP_CHIP)}),
       fpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP)}) };`);
   chk('a copy saved mid-use heals its snapshot state on open', !r.err
       && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp
       && r.endingsHidden && r.gridEmpty && r.statusEmpty && r.noteEmpty
       && r.meterHidden,
       r.err || JSON.stringify(r));
-  chk('a saved copy carries out no seed word and no fingerprint',
-      !r.err && r.wordScrubbed && r.fpScrubbed,
-      r.err || `word left: ${!r.wordScrubbed}, fingerprint left: ${!r.fpScrubbed}`);
+  chk('a saved copy sheds its seed word and fingerprint when opened',
+      !r.err && r.wordScrubbed && r.chipScrubbed && r.fpScrubbed,
+      r.err || `note left: ${!r.wordScrubbed}, chosen chip left: ${!r.chipScrubbed}, `
+             + `fingerprint left: ${!r.fpScrubbed}`);
 
   await p.close();
 }
@@ -892,14 +903,18 @@ async function calibrate(browser, fileUrl) {
     }
     if (req.url.startsWith('/snapshot')) {
       // index.html the way File → Save Page As writes it mid-use: everything
-      // the page derived from a seed serialized in, the seed itself not. The
-      // two values that matter are SNAP_WORD, an actual word of the seed, and
-      // SNAP_FP, the wallet's master fingerprint — the page must not carry
-      // either of them out of a saved file.
+      // the page derived from a seed serialized in, the seed itself not. Three
+      // values matter — SNAP_NOTE, which names an actual word of the seed,
+      // SNAP_CHIP, which IS that word, marked as the chosen ending, and
+      // SNAP_FP, the wallet's master fingerprint. The page must not carry any
+      // of them out of a saved file.
       return fs.readFile(path.join(ROOT, 'index.html'), 'utf8', (err, s) => {
         if (err) { res.writeHead(404); return res.end(); }
-        const chips = Array.from({length: 128},
-          (_, i) => `<div class="w">cand${i}</div>`).join('');
+        // 127 unremarkable endings and the one the reader chose, marked the way
+        // clicking a chip marks it — the seed's own final word, sitting in the
+        // document under a class that says it was picked.
+        const chips = Array.from({length: 127},
+          (_, i) => `<div class="w">cand${i}</div>`).join('') + SNAP_CHIP;
         s = s.replace('<textarea id="in"', '<textarea class="shield" id="in"')
              .replace('<div class="inwrap" id="inwrap">', '<div class="inwrap on fp" id="inwrap">')
              .replace('<div class="inctl" id="inctl" style="display:none">',

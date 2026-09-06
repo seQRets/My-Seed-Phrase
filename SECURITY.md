@@ -21,7 +21,7 @@ You should get an acknowledgement within a week.
 
 ## Before you report
 
-Press **Verify this page** on the affected site. If it doesn't say *12 of 12
+Press **Verify this page** on the affected site. If it doesn't say *14 of 14
 checks passed*, include that — a failure there is significant on its own, and
 tells us whether the copy you loaded matches what was published.
 

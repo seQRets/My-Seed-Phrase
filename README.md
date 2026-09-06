@@ -66,8 +66,9 @@ but it only contributes the last few bits (7 for a 12-word phrase, 3 for a
 24-word one). The words you supply carry the rest, so a random ending cannot
 rescue a badly chosen prefix.
 
-The page follows your system light/dark setting, and the toggle at the top
-right overrides it. The choice is remembered in `localStorage`.
+The page opens light for everyone; the toggle at the top right switches to dark
+and the choice is remembered in `localStorage`. Your system light/dark setting is
+deliberately not consulted: everyone gets the same page until they say otherwise.
 
 ## Running it safely — step by step
 
@@ -201,6 +202,11 @@ Honest limits, none of which are fixable in a web page:
   in the page, in the text box's undo history, and in the browser's memory until
   the tab is closed — and possibly in a file on disk, if your computer ran short
   of memory and parked some of it there.
+- **A copy you save while a phrase is on screen.** File → Save Page As writes
+  what is on the screen to disk — including the ending word this page chose and
+  your wallet's fingerprint. Opening that file again clears both, but a backup, a
+  cloud sync or a text editor reads the file, not the page. Save the page
+  *before* you generate anything, never after.
 - **A hosted copy.** Loading this over the web means trusting whatever is served
   to you on that visit. Download the file, check it, and run it offline for
   anything real.
@@ -217,13 +223,15 @@ duplicates. It then hashes the built-in word list and compares it against the
 official file, and checks that a real cryptographic RNG is present. It should
 read **14 of 14 checks passed**.
 
-By default it shows three lines — the calculations, the word list, the random
-number generator — each either pass or fail. *Show all 13 checks* expands the
-full breakdown for anyone who wants it, and opens by itself if anything failed.
+By default it shows five lines — the calculations, the phrases it generates, the
+fingerprint derivation, the word list, the random number generator — each either
+pass or fail. *Show all 14 checks* expands the full breakdown for anyone who
+wants it, and opens by itself if anything failed.
 
 That wordlist check is the one verification that survives someone tampering with
 a hosted copy: swapping a single word in the embedded list drops the result to
-6 of 12 and prints a different hash.
+13 of 14 and prints a different hash, and lower the more the example phrases
+lean on that word — 12 of 14 for `about`, 8 of 14 for `abandon`.
 
 The tenth check is a regression test. A tempting way to write this calculation
 is to compare `idx.toString(2)` against a zero-padded 11-bit string —
