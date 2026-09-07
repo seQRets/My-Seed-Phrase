@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.5.
+   shasum block. Current release: v1.7.6.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -294,15 +294,16 @@ runs on your machine at push time. Read the diff on that file like any other.
   hardware wallet, imported, and the master fingerprint shown on-device matched
   the one on the page. The end-to-end claim the whole SeedQR feature rests on
   is confirmed against real hardware, not just against verify.js.
-- FIVE outbound links, all pinned by verify.js, plus the in-page "Find my last
+- FOUR outbound links, all pinned by verify.js, plus the in-page "Find my last
   word" jump. Footer: Source on GitHub · ₿ Donate (coinos.io/seQRets/receive) ·
-  ↗ mypassphrase.app. Step 1: a download button pointing at
-  releases/latest/download/index.html — the asset itself, never a page to go
-  hunting on — and a link to releases/latest, where the fingerprint it must be
-  compared against is published. Both are needed: the download alone leaves
-  nothing to check against. The /latest/ aliases never go stale as you release.
-  Those two sit inside the collapsed six steps, so a link there measures zero
-  wide until the disclosure is opened — the check opens it before measuring.
+  ↗ mypassphrase.app. Step 1: one inline link reading "Download the latest
+  release", pointing at releases/latest/download/index.html — the asset itself,
+  never a page to go hunting on. The /latest/ alias never goes stale as you
+  release. Match the sister app mypassphrase.app here: an inline link inside the
+  sentence, not a button, and ONE link — the sentence says the fingerprint is
+  published beside the file, which is why a second link is not needed. That link
+  sits inside the collapsed six steps, so it measures zero wide until the
+  disclosure is opened — the check opens it before measuring.
 - URL.revokeObjectURL fires immediately after the download click. That favours
   the secret's lifetime over an old Safari quirk that can produce an empty
   file. Deliberate; revisit only if a real empty-download report arrives.

@@ -433,14 +433,6 @@
   /* ---- notes / bullets ---- */
   ul{list-style:none}
   .warn a{color:var(--accent-ink);text-underline-offset:.18em}
-  /* Step 1 is the only instruction that sends someone away from the page, and
-     "find it on GitHub" is a lot to ask of a stranger. Give them the file. */
-  .dlbtn{display:inline-flex;align-items:center;gap:.5rem;margin:.65rem 0 .15rem;
-    font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-    padding:.6rem 1rem;border-radius:9px;text-decoration:none;
-    border:1px solid var(--orange);background:var(--panel);color:var(--accent-ink)}
-  .dlbtn:hover{background:var(--orange);color:#000}
-  .dlbtn:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
   .warn ol{margin:1.15rem 0 .4rem;padding-left:1.5rem}
   .warn ol li{font-size:var(--fs-md);line-height:1.7;padding-left:.35rem;margin-bottom:.8rem;
     list-style:decimal}
@@ -653,14 +645,13 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       setting many people turn back on — and <b>Safari leaves them running in Private
       Browsing</b>. Use a separate browser profile with nothing added to it.</p>
       <ol>
-        <li>Download the file while you are still online — not File → Save Page As,
-            which writes a different file whose fingerprint will not match.
-            <a class="dlbtn" href="https://github.com/seQRets/My-Seed-Phrase/releases/latest/download/index.html"
-               target="_blank" rel="noopener noreferrer">↓ Download the file</a>
-            Then compare its fingerprint against the one published on the
-            <a href="https://github.com/seQRets/My-Seed-Phrase/releases/latest"
-               target="_blank" rel="noopener noreferrer">release page</a> before you open it.
-            This is the one check that catches a tampered copy.</li>
+        <li><b>Get the file while you are still online.</b>
+            <a href="https://github.com/seQRets/My-Seed-Phrase/releases/latest/download/index.html"
+               target="_blank" rel="noopener noreferrer">Download the latest release</a> — one
+            file, nothing to install, and the only copy whose fingerprint matches the one
+            published beside it on the release page. Your browser's Save Page As works too, but
+            rewrites the file as it saves, so that copy can never match. Compare the two before
+            you open it: this is the one check that catches a tampered copy.</li>
         <li>Make a fresh browser profile — Chrome/Edge: profile icon → Add; Firefox:
             <code>about:profiles</code> → Create a New Profile. Install nothing into it,
             sign in to nothing.</li>
@@ -1095,7 +1086,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.5 · RUNS OFFLINE</div>
+    <div class="r">v1.7.6 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
