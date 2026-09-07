@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.3.
+   shasum block. Current release: v1.7.4.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -147,6 +147,13 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    size buttons, `let diceTarget`, and the `setDiceTarget(n)` init call. The
    init call wins, so changing only the first two looks right in the file and
    does nothing on the page.
+   The generate selector states the OUTCOME ("12-word seed"), never the
+   arithmetic — its option VALUES stay 11/14/17/20/23, which is what every
+   calculation and every check reads, so the labels are free to change but the
+   values are not. Both generate buttons relabel from the selector via
+   setGenLabels() off CFG, so they cannot drift out of step with it. The Q&A
+   refers to them as "the shorter one" / "the longer one" rather than by a
+   fixed name, since the names now move.
    "Verify this page" sits inside step 5 of the six steps, where the
    instruction to press it is, with its results card directly under the steps
    rather than below the seed card.

@@ -694,22 +694,23 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <div class="pathbody">
       <div class="sublab">Make a new seed</div>
       <div class="row">
-      <select id="genlen" aria-label="How many words to generate">
-        <option value="11">11 words → 12-word seed</option>
-        <option value="14">14 words → 15-word seed</option>
-        <option value="17">17 words → 18-word seed</option>
-        <option value="20">20 words → 21-word seed</option>
-        <option value="23">23 words → 24-word seed</option>
+      <select id="genlen" aria-label="How long a seed to make">
+        <option value="11">12-word seed</option>
+        <option value="14">15-word seed</option>
+        <option value="17">18-word seed</option>
+        <option value="20">21-word seed</option>
+        <option value="23">24-word seed</option>
       </select>
-      <button id="gen">Generate partial seed</button>
-      <button class="primary" id="genfull">Generate complete seed</button>
+      <button id="gen">Generate 11 words</button>
+      <button class="primary" id="genfull">Generate all 12</button>
       <span class="tipwrap"><button class="tipbtn" type="button"
         aria-label="What the generate buttons do">i</button><span class="tipbox"
-        role="tooltip">Both generate buttons draw from your browser's random number generator,
-        the one built for security work. A partial seed stops one word short, so you can watch
-        the checksum narrow the endings and pick one yourself; a complete seed is finished for
-        you. Nothing is saved, recorded or sent anywhere.</span></span>
+        role="tooltip">Both draw from your browser's random number generator, the one built
+        for security work. The shorter one stops a word short, so you can watch the checksum
+        narrow the endings and pick one yourself; the other is finished for you. Nothing is
+        saved, recorded or sent anywhere.</span></span>
       </div>
+      <div class="hint">Stopping a word short lets you choose the last one yourself.</div>
       <div class="sublab">Or finish a seed you already have</div>
       <p class="pathnote">Type 11, 14, 17, 20 or 23 words into the box below and the app
         returns every final word the checksum allows.</p>
@@ -843,11 +844,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <summary>What do all the buttons actually do?</summary>
         <p><b>Find checksum words</b> — takes the words in the box and lists every valid final
         word for them. Click any candidate to see the completed phrase.</p>
-        <p><b>Generate partial seed</b> — draws the number of random words you picked in the
-        dropdown (11–23) and calculates their valid endings, but leaves the choice of ending to
-        you. Use it when you want to see the candidates and pick your own.</p>
-        <p><b>Generate complete seed</b> — does everything in one press: draws the random
-        words, calculates the endings, and picks one at random too. The finished, wallet-ready
+        <p><b>Generate 11 words</b> (or 14, 17, 20, 23, depending on the seed length you
+        chose) — draws that many random words and calculates their valid endings, but leaves
+        the choice of ending to you. Use it when you want to see the candidates and pick your
+        own.</p>
+        <p><b>Generate all 12</b> (or all 15, 18, 21, 24) — does everything in one press:
+        draws the random words, calculates the endings, and picks one at random too. The finished, wallet-ready
         phrase lands in the box, blurred until the eye button reveals it.</p>
         <p><b>Pick at random</b> — once endings are listed, lets the browser's cryptographic
         generator choose one for you instead of you clicking a favourite.
@@ -926,9 +928,9 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         draw lands on a word directly instead of being squeezed down to fit. That matters:
         squeezing is what makes some words come up slightly more often than others. Here every
         word is exactly as likely as every other.</p>
-        <p>Both generate buttons use it — <b>Generate complete seed</b> draws every word
-        including the ending in one press, and <b>Generate partial seed</b> stops one word
-        short so you can see the checksum at work and choose the ending yourself. Either way
+        <p>Both generate buttons use it — the longer one draws every word including the
+        ending in one press, and the shorter one stops a word short so you can see the checksum
+        at work and choose the ending yourself. Either way
         ends at the same place: a phrase whose every word came from the generator.</p>
         <p>One route does not use it at all. Roll your own dice, type the numbers in, and your
         rolls decide every word — the app only does the arithmetic. That is the slow way, and
@@ -1081,7 +1083,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.3 · RUNS OFFLINE</div>
+    <div class="r">v1.7.4 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4601,6 +4603,17 @@ $("incopy").onclick = () => {
 };
 
 const copy = t => navigator.clipboard?.writeText(t).catch(() => {});
+
+// The selector says what you end up with; the buttons say how many words each
+// one draws towards it. They have to move together or the pair stops making
+// sense — CFG is the same table the calculation uses, so they cannot drift.
+function setGenLabels() {
+  const n = +$("genlen").value;
+  $("gen").textContent = `Generate ${n} words`;
+  $("genfull").textContent = `Generate all ${CFG[n].n}`;
+}
+$("genlen").addEventListener("change", setGenLabels);
+setGenLabels();
 
 $("gen").onclick = async () => {
   if (FRAMED) return;
