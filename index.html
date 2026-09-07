@@ -312,7 +312,11 @@
   .dicelede+.dicelede{margin-top:.7rem}
   /* The rolls are the seed in another form, so the warning that says so gets the
      same red box as the download gate, not the dim .hint colour. */
-  .dicewarn{font-size:var(--fs-sm);color:var(--red-ink);border:1px solid var(--red-ink);
+  /* hugs its sentence rather than stretching the full width — a short warning
+     ringed by empty box reads as decoration. max-width keeps it wrapping
+     inside the card on a narrow screen instead of overflowing. */
+  .dicewarn{display:table;width:fit-content;max-width:100%;
+    font-size:var(--fs-sm);color:var(--red-ink);border:1px solid var(--red-ink);
     border-radius:10px;padding:.7rem .8rem;margin-top:1rem;line-height:1.6;
     background:rgba(248,113,113,.07)}
   .sizes{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem}
@@ -618,14 +622,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       aria-label="Why this page is safe to use">i</button><span class="tipbox" role="tooltip"
       ><b>Nothing</b> leaves this page.<br><b>Offline</b> — works with the wi-fi
       off.<br><b>One page</b> — nothing to install.</span></span></h1>
-  <p class="dek"><b>The BIP-39 last-word calculator &amp; seed generator.</b> Every seed phrase
-     ends in a checksum, so the last word is not a free choice — give the app the words you have
-     and it returns every valid final word. Or make a whole seed: let the app draw one, or roll
-     dice and it builds the seed from your own rolls. Entirely in your browser; nothing touches
-     the internet.</p>
+  <p class="dek"><b>The BIP-39 last-word calculator &amp; seed generator.</b> The last word is
+     never a free choice. Give the app your words and it returns every valid ending — or makes
+     a whole seed, from the browser's randomness or your own dice. Nothing touches the
+     internet.</p>
   <div class="ctarow">
     <a class="cta" href="#inputcard">Find my last word ↓</a>
-    <span class="ctanote">Type the words you have — or generate a whole seed — and press calculate.</span>
   </div>
 
   <div class="warn">
@@ -659,7 +661,8 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
             those wrong. What it cannot do is prove this copy is the one that was
             published: a tampered copy with an honest word list and honest arithmetic
             would still pass every check here. That is what step 1’s fingerprint is for.
-            It needs no connection, and it checks the page, not your computer.</li>
+            It needs no connection, and it checks the page, not your computer.
+            <div class="row"><button id="test">Verify this page</button></div></li>
         <li>Write the phrase down by hand — never the copy or download buttons. Do not save
             the page again once a phrase is on screen: that writes what you can see to
             disk. Then quit the browser completely before reconnecting.</li>
@@ -667,21 +670,25 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     </details>
   </div>
 
+  <div class="card" id="testout" style="display:none">
+    <div class="cardhead">
+      <div class="h ok">Verification</div>
+      <button class="x" id="testclose" type="button" aria-label="Close verification">×</button>
+    </div>
+    <div id="testbody"></div>
+  </div>
+
   <div class="card" id="paths">
     <div class="h">Two ways to make a seed</div>
-    <p class="pathslede">Both put a finished seed in the box below. The only difference is
-      where the randomness comes from — and that is the part that decides whether anyone can
-      ever guess it.</p>
+    <p class="pathslede">Both put a finished seed in the box below. The difference is
+      where the randomness comes from.</p>
 
     <details class="path" id="apppath">
       <summary class="pathhead">
         <span class="pathnum">1</span>
           <span class="pathtitle">Let the app make it</span>
           <span class="pathsub">The quick route. The words come from your browser’s random
-            number generator — the one your operating system provides for security work. That
-            generator is sound. What no page can prove about itself is that it is the copy that
-            was published, which is what checking the file’s fingerprint in step 1 settles. This
-            route also works out the endings for words you already have.</span>
+            number generator.</span>
         <span class="pathbtn">Generate</span>
       </summary>
       <div class="pathbody">
@@ -717,31 +724,23 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <summary class="pathhead">
         <span class="pathnum">2</span>
           <span class="pathtitle">Roll your own randomness</span>
-          <span class="pathsub">The slow route, and the only one where you do not have to take
-            the browser on trust. Roll dice, type the results, and the same rolls always make
-            the same seed.</span>
+          <span class="pathsub">The slow route. Your dice decide every word, so you need not
+            take the browser on trust.</span>
         <span class="pathbtn">Roll</span>
       </summary>
       <div class="pathbody">
 
-    <p class="dicelede">Your browser’s random number generator is a good one. Using it does
-      mean trusting that this page is the copy that was published — dice remove even that
-      question, because the randomness is yours. Roll a die and type the results here.</p>
-    <p class="dicelede">The same rolls always make the same seed. That means a hardware wallet
-      can be made to check this page’s answer, and it means the rolls are worth keeping until
-      you have.</p>
-    <div class="dicewarn">⚠︎ <b>These numbers are your seed.</b> Anyone who has them can work
-      out every word, on any computer, for ever. Treat the paper you rolled onto exactly like
-      the paper you write the words on — and once the words are written down and checked,
-      destroy it.</div>
+    <p class="dicelede">Roll a six-sided die and type each result here.</p>
+    <div class="dicewarn">⚠︎ <b>These numbers are your seed.</b> Anyone who has them
+      can take the wallet.</div>
 
     <div class="h" style="margin-top:1.6rem">Which seed do you want to end up with?</div>
     <div class="sizes" id="dicesizes">
-      <button class="size" type="button" data-w="12">12 words<span class="n">50 rolls</span></button>
+      <button class="size on" type="button" data-w="12">12 words<span class="n">50 rolls</span></button>
       <button class="size" type="button" data-w="15">15 words<span class="n">62 rolls</span></button>
       <button class="size" type="button" data-w="18">18 words<span class="n">75 rolls</span></button>
       <button class="size" type="button" data-w="21">21 words<span class="n">87 rolls</span></button>
-      <button class="size on" type="button" data-w="24">24 words<span class="n">100 rolls</span></button>
+      <button class="size" type="button" data-w="24">24 words<span class="n">100 rolls</span></button>
     </div>
     <p class="dicelede" id="dicetarget"></p>
 
@@ -765,10 +764,6 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <button id="diceclr">Clear rolls</button>
       <button id="dicepeek" aria-pressed="true" aria-label="Hide the rolls">Hide rolls</button>
     </div>
-    <p class="dicelede" style="margin-top:1.2rem">Any six-sided die works, but a cheap one is
-      not perfectly fair. Casino dice are, and cost very little. If you are unsure about yours,
-      roll more than the minimum — an unfair die carries less randomness per roll, and extra
-      rolls make up the difference.</p>
       </div>
     </details>
   </div>
@@ -801,7 +796,6 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="hint" id="inhint" style="display:none"></div>
     <div class="row">
       <button id="clr">Clear</button>
-      <button id="test">Verify this page</button>
     </div>
     <div class="status" id="st"></div>
     <div class="meter" id="meter" style="display:none">
@@ -812,14 +806,6 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <div class="bar"><div class="fill" id="mfill"></div></div>
       <div class="mnote" id="mnote"></div>
     </div>
-  </div>
-
-  <div class="card" id="testout" style="display:none">
-    <div class="cardhead">
-      <div class="h ok">Verification</div>
-      <button class="x" id="testclose" type="button" aria-label="Close verification">×</button>
-    </div>
-    <div id="testbody"></div>
   </div>
 
   <div class="card" id="out" style="display:none">
@@ -978,6 +964,8 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         stretch of the list. Then it works out how many phrases someone would still have to try
         if they noticed the same pattern. Treat that as the best case, never as proof your words
         are random.</p>
+        <p>It counts in bits. One bit is one yes-or-no answer a guesser has to get right, so
+        every bit lost halves the work they face.</p>
       </details>
 
       <details>
@@ -1093,7 +1081,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.2 · RUNS OFFLINE</div>
+    <div class="r">v1.7.3 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3998,14 +3986,10 @@ function updateMeter() {
   $("mnote").innerHTML = a.flags.length
     ? `<b class="${cls}">These words look hand-picked.</b> ${
         (f => f.charAt(0).toUpperCase() + f.slice(1))(a.flags.join("; "))}. `
-      + `A bit is one yes-or-no answer a guesser has to get right, and spotting that pattern `
-      + `would cut yours from ${a.ceiling} to <b>at most ${Math.round(a.bits)}</b>, possibly `
-      + `far fewer — every bit lost halves the work they face. This can see the pattern, not `
-      + `how predictably you chose. Generate the words at random instead.`
+      + `That could cut your ${a.ceiling} to <b>at most ${Math.round(a.bits)}</b>. `
+      + `Generate the words at random instead.`
     : `<b class="${cls}">No hand-picking patterns found.</b> That is not proof your words are `
-      + `random — what makes a phrase strong is how the words were chosen, not which words they `
-      + `are. A bit is one yes-or-no answer a guesser has to get right, and all ${a.ceiling} of `
-      + `yours only count if every one was picked at random.`;
+      + `random — only that nothing obvious is wrong with them.`;
 }
 
 /* ---- theme ---------------------------------------------------------- */
@@ -4075,9 +4059,7 @@ function pickAtRandom() {
   if (whole) {
     $("inhint").style.display = "block";
     $("inhint").textContent =
-      `All ${cfg.n} words came from your browser’s random number generator, the one built for `
-      + `security work — nothing was chosen by hand, which is what makes this a real seed `
-      + `rather than a demonstration. A wallet will accept it as it stands. Write it down by `
+      `All ${cfg.n} words came from your browser’s random number generator. Write it down by `
       + `hand before you do anything else.`;
     return;
   }
@@ -4129,7 +4111,7 @@ $("genfull").onclick = async () => {
 // whether they are hashed or not, which is why the longer sizes stay shut
 // until the rolls are actually there.
 const DICE = { 12:50, 15:62, 18:75, 21:87, 24:100 };   // ceil(bits / log2(6))
-let diceTarget = 24, diceMadeFrom = null, diceMadeCount = 0;
+let diceTarget = 12, diceMadeFrom = null, diceMadeCount = 0;
 
 async function rollsToEntropy(rolls) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(rolls));
@@ -4316,11 +4298,8 @@ async function diceGenerate(acknowledged) {
   $("st").textContent = `✓  Complete ${best}-word seed in the box above, made from your `
     + `${rolls.length} rolls.`;
   $("inhint").style.display = "block";
-  $("inhint").textContent = `All ${best} words came from your dice. Nothing was chosen by hand `
-    + `and nothing came from your browser’s random number generator. A wallet will accept it as `
-    + `it stands. Write it down by hand before you do anything else. The last word was not left `
-    + `for you to choose: your rolls decided all ${best}, including the last one, which also `
-    + `carries the check that makes a wallet accept the phrase.`;
+  $("inhint").textContent = `All ${best} words came from your dice, including the last one. `
+    + `Write it down by hand before you do anything else.`;
   $("inputcard").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -4703,7 +4682,7 @@ scrubDerived();
 if ($("in").value.trim()) shieldOn();
 else shieldReset();
 if (diceRolls().length) diceHide();
-setDiceTarget(24);
+setDiceTarget(12);
 updateMeter();
 </script>
 </body>

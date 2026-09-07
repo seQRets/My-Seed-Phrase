@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.2.
+   shasum block. Current release: v1.7.3.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -141,7 +141,16 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    margin:auto, because a centred flex item taller than the screen has its top
    clipped unreachably, which puts the close button off a phone.
 8. CNAME (myseedphrase.app) and .nojekyll must never be deleted.
-9. Candidate list reads top-to-bottom then left-to-right (CSS columns:9rem,
+9. The dice route defaults to a 12-word seed / 50 rolls — 100 rolls is too
+   big an opening ask, and the longer seeds still unlock as you keep rolling.
+   That default lives in THREE places which must agree: the "on" class in the
+   size buttons, `let diceTarget`, and the `setDiceTarget(n)` init call. The
+   init call wins, so changing only the first two looks right in the file and
+   does nothing on the page.
+   "Verify this page" sits inside step 5 of the six steps, where the
+   instruction to press it is, with its results card directly under the steps
+   rather than below the seed card.
+10. Candidate list reads top-to-bottom then left-to-right (CSS columns:9rem,
    not a grid). No horizontal overflow 320–1440px. Tooltips are pinned to the
    viewport below 560px: the bubble is nearly screen-width and its trigger
    moves, so it cannot hang off the trigger. Opening a path scrolls it to the
@@ -152,13 +161,25 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    a frame callback queued while the tab is hidden fires whenever the tab is
    next looked at, jerking the page then. prefers-reduced-motion turns the
    page's smooth scrolling off.
-10. Copy register: plain English for a scared seed-phrase holder, not an
+11. Copy register: plain English for a scared seed-phrase holder, not an
     engineer. No "network request/entropy bits/hash/CSP" in user-facing copy;
     a bit is "one yes-or-no answer"; honest about limits, never reassuring
     marketing. Auditor-facing README sections (calibration, randomness
     internals) keep their precision. No keyboard shortcuts (removed
     deliberately). Minimal repo: ask before adding any file.
-11. Anything that puts the seed somewhere it outlives the tab must say so, in
+    WORDS BELONG IN THE Q&A AND TOOLTIPS, NOT THE INTERFACE, unless they are
+    needed at the moment of action. v1.7.3 cut the prose on screen roughly in
+    half (708 -> 387 words in the working state) by moving every explanation of
+    WHY into the Q&A, which already carried most of it, and leaving the
+    interface to say only what a thing IS. Before adding a sentence to the
+    interface, ask whether it is a Q&A answer wearing a disguise. Two things
+    that stay: warnings at the moment of exposure, and any gloss for a term the
+    UI itself shows.
+    A warning must not assume a step the interface never gave. The dice warning
+    said "destroy the paper once the words are written down" while nothing on
+    screen had told anyone to write the rolls on paper; that half moved to the
+    Q&A, where the workflow is actually described.
+12. Anything that puts the seed somewhere it outlives the tab must say so, in
     the register of the clipboard warning. Copying may warn after the fact —
     a clipboard entry fades — but saving must not: the download button writes
     nothing on the first press. It shows the warning in red (--red-ink, not
@@ -167,7 +188,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
     for a second press on "Save it anyway". That button is deliberately NOT
     focused, so a reflexive second Enter cannot save the file. Closing the
     modal forgets the acknowledgement, like every other reveal here.
-12. The page refuses to be framed. frame-ancestors only works as a real HTTP
+13. The page refuses to be framed. frame-ancestors only works as a real HTTP
     header and GitHub Pages cannot send one, so a pre-paint script checks
     window.top !== window.self, fails closed, and withholds the tool. The
     warning carries NO link — a frame can be sandboxed so links cannot escape,
