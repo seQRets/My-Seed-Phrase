@@ -579,17 +579,23 @@ async function pageChecks(browser, fileUrl, httpUrl) {
 
   console.log('\n--- how it looks ---');
   const links = await p.evaluate(
-    `return [...document.querySelectorAll('a')].map(a=>({href:a.href,target:a.target,rel:a.rel,w:a.getBoundingClientRect().width}));`);
+    `document.querySelectorAll('.warn details').forEach(d=>d.open=true);
+     await new Promise(r=>setTimeout(r,120));
+     return [...document.querySelectorAll('a')].map(a=>({href:a.href,target:a.target,rel:a.rel,w:a.getBoundingClientRect().width}));`);
   // Outbound links must open in a new tab and give the destination nothing.
   // The in-page jump link is a different animal: it stays on the page, so it
   // wants no target and needs no rel.
   const outbound = links.filter(l => /^https:/.test(l.href));
   const inpage = links.filter(l => !/^https:/.test(l.href));
-  chk('the three outbound links are safe, the in-page link stays in the page',
-    outbound.length === 3 &&
+  const RELEASES = 'https://github.com/seQRets/My-Seed-Phrase/releases/latest';
+  chk('every outbound link is safe, and step 1 really hands over the file',
+    outbound.length === 5 &&
     outbound.some(l => l.href === 'https://github.com/seQRets/My-Seed-Phrase') &&
     outbound.some(l => l.href === 'https://coinos.io/seQRets/receive') &&
     outbound.some(l => l.href === 'https://mypassphrase.app/') &&
+    // the download must point at the asset itself, not a page to go hunting on
+    outbound.some(l => l.href === RELEASES + '/download/index.html') &&
+    outbound.some(l => l.href === RELEASES) &&
     outbound.every(l => l.target === '_blank' && /noopener/.test(l.rel) && /noreferrer/.test(l.rel) && l.w > 40) &&
     inpage.length === 1 && /#inputcard$/.test(inpage[0].href) && inpage[0].target === '',
     `${outbound.length} outbound, ${inpage.length} in-page`);
