@@ -198,22 +198,22 @@ control you are relying on.
 
 ### Step 1 — Download the file, while still online
 
-Download `index.html` from the
+Download `myseedphrase.html` from the
 [latest release](https://github.com/seQRets/My-Seed-Phrase/releases/latest).
 Every release publishes the fingerprint of the file alongside it. Check the one
 you downloaded against it before you open it:
 
 ```bash
 # macOS
-shasum -a 256 ~/Downloads/index.html
+shasum -a 256 ~/Downloads/myseedphrase.html
 
 # Linux
-sha256sum ~/Downloads/index.html
+sha256sum ~/Downloads/myseedphrase.html
 ```
 
 ```powershell
 # Windows (PowerShell)
-Get-FileHash $HOME\Downloads\index.html -Algorithm SHA256
+Get-FileHash $HOME\Downloads\myseedphrase.html -Algorithm SHA256
 ```
 
 If what you get is not the value published on the release page, stop — do not
@@ -247,7 +247,7 @@ Turn off phone tethering and Bluetooth too, if you use them.
 
 Open a private window in the extension-free browser — <kbd>Cmd/Ctrl</kbd> +
 <kbd>Shift</kbd> + <kbd>N</kbd> in Chrome, Edge and Safari, <kbd>Cmd/Ctrl</kbd>
-+ <kbd>Shift</kbd> + <kbd>P</kbd> in Firefox — then drag `index.html` onto the
++ <kbd>Shift</kbd> + <kbd>P</kbd> in Firefox — then drag `myseedphrase.html` onto the
 window, or press <kbd>Cmd/Ctrl</kbd> + <kbd>O</kbd> and pick it.
 
 ### Step 5 — Let the page confirm your setup

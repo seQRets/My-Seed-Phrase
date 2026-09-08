@@ -594,7 +594,7 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     outbound.some(l => l.href === 'https://coinos.io/seQRets/receive') &&
     outbound.some(l => l.href === 'https://mypassphrase.app/') &&
     // the download must point at the asset itself, not a page to go hunting on
-    outbound.some(l => l.href === RELEASES + '/download/index.html') &&
+    outbound.some(l => l.href === RELEASES + '/download/myseedphrase.html') &&
     outbound.every(l => l.target === '_blank' && /noopener/.test(l.rel) && /noreferrer/.test(l.rel) && l.w > 40) &&
     inpage.length === 1 && /#inputcard$/.test(inpage[0].href) && inpage[0].target === '',
     `${outbound.length} outbound, ${inpage.length} in-page`);

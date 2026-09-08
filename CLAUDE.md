@@ -259,7 +259,9 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 Page self-test must read 15 of 15 (file:// and http).
 Release: bump the footer version → commit → push → poll Pages build FOR THAT
 COMMIT (not just "built") → live hash == local → tag with hash in message →
-gh release create vX.Y.Z index.html --notes-file … → re-download asset +
+gh release create vX.Y.Z index.html#myseedphrase.html --notes-file … (the asset is
+named for the app; the repo file stays index.html because Pages serves it at
+the domain root) → re-download asset +
 fresh-clone verify.js.
 
 verify.js runs page code through template literals, so a backslash in a regex
@@ -305,7 +307,7 @@ runs on your machine at push time. Read the diff on that file like any other.
 - FOUR outbound links, all pinned by verify.js, plus the in-page "Find my last
   word" jump. Footer: Source on GitHub · ₿ Donate (coinos.io/seQRets/receive) ·
   ↗ mypassphrase.app. Step 1: one inline link reading "Download the latest
-  release", pointing at releases/latest/download/index.html — the asset itself,
+  release", pointing at releases/latest/download/myseedphrase.html — the asset itself,
   never a page to go hunting on. The /latest/ alias never goes stale as you
   release. Match the sister app mypassphrase.app here: an inline link inside the
   sentence, not a button, and ONE link — the sentence says the fingerprint is
