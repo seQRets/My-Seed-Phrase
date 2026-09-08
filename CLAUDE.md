@@ -162,9 +162,13 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
     support for dice entropy in wallets is an incentive for many people to roll
     their own. Describe SHA-256-of-the-digits as the common convention, never as
     a named product's, and state interoperability conditionally ("a wallet that
-    derives it the same way") because it has NOT been confirmed against
-    hardware. The SeedQR wallet list in the README is the exception: it predates
-    this and rests on the real-device test in Standing items.
+    derives it the same way"). The reason for that hedge CHANGED on 8 Sep 2026:
+    the convention is now confirmed against real hardware (see Standing items),
+    so the hedge is no longer about an untested claim. It is because one device
+    is not a survey and another wallet may take dice a different way. Keep the
+    conditional phrasing; do not upgrade it to a promise about wallets in
+    general. The SeedQR wallet list in the README is the exception to the naming
+    rule: it predates this and rests on its own real-device test.
 10. Candidate list reads top-to-bottom then left-to-right (CSS columns:9rem,
    not a grid). No horizontal overflow 320–1440px. Tooltips are pinned to the
    viewport below 560px: the bubble is nearly screen-width and its trigger
@@ -307,6 +311,14 @@ runs on your machine at push time. Read the diff on that file like any other.
   hardware wallet, imported, and the master fingerprint shown on-device matched
   the one on the page. The end-to-end claim the whole SeedQR feature rests on
   is confirmed against real hardware, not just against verify.js.
+- Real-device test DONE for dice (8 Sep 2026): 52 throws made a 12-word seed
+  here, the same throws were entered into a Krux wallet, which asks for them as
+  plain 1-6 digits, and both the seed AND the master fingerprint matched. The
+  SHA-256-of-the-digits convention is confirmed against real hardware, not just
+  against verify.js. One device is not a survey, though: other wallets may take
+  dice a different way, which is why the copy stays conditional. Krux is named
+  HERE only — 9b still bars naming a wallet in the page, the README or release
+  notes for the dice route.
 - FOUR outbound links, all pinned by verify.js, plus the in-page "Find my last
   word" jump. Footer: Source on GitHub · ₿ Donate (coinos.io/seQRets/receive) ·
   ↗ mypassphrase.app. Step 1: one inline link reading "Download the latest
