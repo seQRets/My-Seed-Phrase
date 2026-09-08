@@ -96,7 +96,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.8.0.
+   shasum block. Current release: v1.8.1.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -104,8 +104,21 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the eye flips it. QR + fingerprint appear only when the phrase is complete.
    The QR modal always opens blurred, reveal is never sticky, canvas wiped on
    close. Fingerprints are never blurred (identify, can't open). Coming back
-   via the back button re-blurs whatever is in the box and wipes the QR —
-   nothing is ever erased, because a phrase being copied down must not vanish.
+   via the back button re-blurs whatever is in the box and wipes the QR, and
+   erases nothing — the eye puts it back. Closing a panel is different and does
+   erase: folding one shut with its own tab button, or opening another panel,
+   runs that panel's own Clear (clearMake / clearRoll / clearFinish, the same
+   functions its Clear button is wired to, so the two can never drift apart).
+   The owner asked for this twice; a blurred seed left in a folded-away panel is
+   still a seed on screen for whoever opens the tab next. It is a real trade: a
+   stray press on a tab button destroys a seed someone is half way through
+   copying out, and 100 dice rolls with it, so the copy under a generated seed
+   and the Q&A both say so plainly. Do not quietly soften this back to blurring.
+   Setting .open fires each panel's own toggle event, so the open branch only
+   sets .open = false on the others and the close branch does all the wiping —
+   one code path. Toggle is queued, not synchronous: a test that opens two panels
+   inside one task lets the first handler close the second, so the harness ticks
+   between opens.
    A copy saved with File → Save Page As serializes the live DOM but not the
    seed, so the page reconciles with the box's actual content at load — an
    empty box sheds any serialized state. Reconciling is not enough on its own:

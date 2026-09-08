@@ -121,15 +121,27 @@ the rolls withdraws the acknowledgement.
 
 ### Shared behaviour
 
-Everything happens in one seed field. Anything the generator produces —
-a complete seed or a partial one — lands in the input box **blurred**, so it is
-not readable over your shoulder; words you type yourself stay visible, and the
-blur state carries through when you complete them. An eye control reveals and
+Each panel keeps its own seed field, and clearing one leaves the other two
+alone. Anything the generator produces — a complete seed or a partial one —
+lands in that panel's field **blurred**, so it is not readable over your
+shoulder; words you type yourself stay visible, and the blur state carries
+through when you complete them. An eye control reveals and
 hides, a copy control copies — with the usual warning that the clipboard can be
 read by anything running on the machine. The valid endings are listed below
 with the picked word marked; clicking a different one swaps the ending in the
 box above, and a note beneath the list says so. Editing the box by hand
-dismisses the blur and its controls. The seed's **BIP-32 master
+dismisses the blur and its controls.
+
+**Closing a panel empties it**, and so does opening a different one. It is the
+same wipe that panel's own *Clear* button performs: the field, the dice rolls
+behind it, and everything worked out from them. A blurred seed left sitting in a
+folded-away panel is still a seed on the screen of whoever opens that tab next,
+and blurring only hides it from the room, not from the machine. The cost is
+real and deliberate — a stray press on a tab button destroys a phrase you were
+half way through copying out, and a hundred dice rolls with it. Write the words
+down before you move to another panel; nothing brings them back. The back button
+is the one exception: it re-blurs what is on screen without erasing it, so a tab
+restored from history still holds the phrase behind the eye. The seed's **BIP-32 master
 fingerprint** (assuming an empty passphrase) appears both under the generated
 seed in the input box and beneath the QR, unblurred —
 a fingerprint identifies a wallet but cannot open it. After the device scans,

@@ -332,7 +332,10 @@
   .size.on{background:rgba(247,147,26,.14);border-color:var(--orange);color:var(--accent-ink)}
   .size.on .n{color:var(--accent-ink);opacity:.75}
   .size.ready{border-color:var(--green-ink)}
-  #rolls{width:100%;min-height:5rem;margin-top:1rem;padding:.9rem 1rem;
+  #rollwrap{margin-top:1rem}
+  /* the right side is reserved for the eye, which rides in the corner the way it
+     does in every seed field. Set here because #rolls outranks any .inwrap rule. */
+  #rolls{width:100%;min-height:5rem;padding:.9rem 3.3rem .9rem 1rem;
     border:1px solid var(--fieldline);border-radius:12px;background:var(--field);
     color:var(--ink);font:15px/1.9 var(--mono);letter-spacing:.16em;resize:vertical}
   #rolls::placeholder{color:var(--dim);letter-spacing:.02em}
@@ -747,9 +750,18 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     </div>
     <p class="dicelede" id="dicetarget"></p>
 
-    <textarea id="rolls" spellcheck="false" autocomplete="off" autocapitalize="off"
-      autocorrect="off" inputmode="numeric"
-      placeholder="type each roll as you go: 4 3 1 2 5 6 …"></textarea>
+    <div class="inwrap" id="rollwrap">
+      <textarea id="rolls" spellcheck="false" autocomplete="off" autocapitalize="off"
+        autocorrect="off" inputmode="numeric"
+        placeholder="type each roll as you go: 4 3 1 2 5 6 …"></textarea>
+      <div class="inctl" id="rollctl" style="display:none">
+        <button class="ictl" id="dicepeek" type="button" aria-label="Hide the rolls" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+            <line id="dicepeekslash" x1="4" y1="21" x2="20" y2="3" style="display:none"/>
+          </svg></button>
+      </div>
+    </div>
     <div class="rollrow">
       <span class="rollof">Rolls</span>
       <span class="rollnum" id="dicecount">0</span>
@@ -765,7 +777,6 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="row">
       <button class="primary" id="dicego" disabled>Make a seed</button>
       <button id="diceclr">Clear</button>
-      <button id="dicepeek" aria-pressed="true" aria-label="Hide the rolls">Hide rolls</button>
     </div>
       <div class="inwrap" id="dwrap">
         <textarea id="dseed" readonly spellcheck="false" placeholder="your seed appears here, hidden until you press the eye"></textarea>
@@ -874,14 +885,18 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <details>
         <summary>What do all the buttons actually do?</summary>
         <p>The page has three panels and each one keeps its own buttons and its own seed
-        field. Nothing you press in one panel changes another.</p>
+        field. Nothing you press in one panel changes another. <b>Closing a panel empties
+        it</b>, and so does opening a different one — the same as pressing that panel's
+        <b>Clear</b>. A seed left sitting in a folded-away panel is still a seed on the
+        screen of whoever opens the tab next, so it is not left there. Write your words down
+        before you move on: nothing brings them back.</p>
         <p><b>Make a new seed.</b> Choose a length, press <b>Generate</b>, and a finished
         phrase appears in that panel's field, blurred until the eye reveals it.
         <b>Clear</b> empties it.</p>
         <p><b>Roll your own randomness.</b> Choose the length you want and the panel tells you
         how many throws it needs: 50 for a 12-word seed, 100 for 24. Type each throw as you go
-        and the count keeps score. <b>Make a seed</b> turns the finished rolls into words,
-        <b>Hide rolls</b> covers the numbers the way the eye covers the words, and
+        and the count keeps score. <b>Make a seed</b> turns the finished rolls into words, the
+        <b>eye</b> in the corner of the box covers the numbers the way it covers the words, and
         <b>Clear</b> wipes the rolls and the seed together.</p>
         <p><b>Finish a seed you already have.</b> Type the words you have and press
         <b>Find checksum words</b> to list every final word that completes them. Click any one
@@ -1114,7 +1129,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· MAKE OR FINISH A BIP-39 SEED</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.8.0 · RUNS OFFLINE</div>
+    <div class="r">v1.8.1 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4140,7 +4155,8 @@ $("genfull").onclick = async () => {
     madeField.show(await makeSeed(len),
       `All ${len} words came from your browser's random number generator, the one built for `
       + `security work. Nothing was chosen by hand. A wallet will accept it as it stands. `
-      + `Write it down by hand before you do anything else.`);
+      + `Write it down by hand before you do anything else — closing this panel `
+      + `erases it, and nothing brings it back.`);
   } catch (e) {
     madeField.clear();
     $("st").className = "status bad";
@@ -4293,6 +4309,7 @@ function diceUnlocked(n) { return Object.keys(DICE).map(Number).filter(w => n >=
 
 function updateDice() {
   const raw = $("rolls").value;
+  $("rollctl").style.display = raw ? "flex" : "none";
   const n = diceRolls().length;
   const bad = [...new Set(raw.replace(/\s/g, "").split("").filter(c => !"123456".includes(c)))];
   $("dicebad").style.display = bad.length ? "block" : "none";
@@ -4417,14 +4434,23 @@ $("diceanyway").onclick = () => diceGenerate(true);
 
 // Three jobs, one open at a time: opening one folds the others away so an open
 // panel never has another panel's controls jostling it.
+// Closing a panel empties it, running exactly the Clear that panel's own button
+// runs. A blurred seed left sitting in a folded-away panel is still a seed on
+// screen for whoever opens that tab next, and blurring only hides it from the
+// room, not from the machine. This ERASES: the eye cannot bring it back, so the
+// words have to be on paper before the panel is shut. Setting .open fires each
+// panel's own toggle, so opening one wipes the others through this same branch.
+const wipe = { makepath: () => clearMake(),
+               dicepath: () => clearRoll(),
+               finishpath: () => clearFinish() };
 document.querySelectorAll("#routes .path").forEach(d => d.addEventListener("toggle", () => {
-  if (!d.open) return;
+  if (!d.open) { wipe[d.id](); return }
   document.querySelectorAll("#routes .path").forEach(o => { if (o !== d) o.open = false });
 }));
 
 function setDicePeek(hidden) {
   $("rolls").classList.toggle("shield", hidden);
-  $("dicepeek").textContent = hidden ? "Show rolls" : "Hide rolls";
+  $("dicepeekslash").style.display = hidden ? "none" : "block";
   $("dicepeek").setAttribute("aria-pressed", String(!hidden));
   $("dicepeek").setAttribute("aria-label", hidden ? "Show the rolls" : "Hide the rolls");
 }
@@ -4432,10 +4458,12 @@ function setDicePeek(hidden) {
 // brings the page back finds them hidden, and they are never erased.
 const diceHide = () => setDicePeek(true);
 $("dicepeek").onclick = () => setDicePeek(!$("rolls").classList.contains("shield"));
-$("diceclr").onclick = () => {
+function clearMake() { madeField.clear() }
+function clearRoll() {
   $("rolls").value = ""; scrubDice(); updateDice(); diceField.clear();
-};
-$("gclr").onclick = () => madeField.clear();
+}
+$("diceclr").onclick = clearRoll;
+$("gclr").onclick = clearMake;
 // The rolls are seed material and everything worked out from them is written
 // into the document, so they scrub exactly like the seed does.
 function scrubDice() {
@@ -4729,14 +4757,15 @@ $("testclose").onclick = () => { $("testout").style.display = "none" };
 $("go").onclick = calculate;
 $("test").onclick = selfTest;
 $("ex").onclick = () => { $("in").value = "abandon ".repeat(11).trim(); calculate(); };
-$("clr").onclick = () => {
-  // Clear has to scrub, not merely hide: it used to leave the ending word and
-  // the fingerprint sitting in the document, so a page saved after pressing it
-  // still carried them.
+// Clear has to scrub, not merely hide: it used to leave the ending word and the
+// fingerprint sitting in the document, so a page saved after pressing it still
+// carried them. Closing the panel calls this too.
+function clearFinish() {
   shieldReset();
   scrubFinish();
   $("in").value = "";
-};
+}
+$("clr").onclick = clearFinish;
 addEventListener("online", netBadge);
 addEventListener("offline", netBadge);
 

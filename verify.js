@@ -522,6 +522,14 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     if(!await wait(()=>/^[0-9a-f]{8}$/.test($('gfpv').textContent), 8000))
       return {err:'panel 1 fingerprint never shown'};
     out.madeFp = $('gfpv').textContent;
+    // the reserved right padding must clear the control strip in every field, or
+    // a long first line runs underneath the icons. Measured panel by panel while
+    // each one is still populated — closing a panel now empties it.
+    const covers = (area, ctl) => {
+      const a=area.getBoundingClientRect(), c=ctl.getBoundingClientRect();
+      return parseFloat(getComputedStyle(area).paddingRight) >= (a.right - c.left) - 1;
+    };
+    out.padMake = covers($('gseed'), $('gctl'));
     // the modal agrees with the line in the field
     $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never drew'};
@@ -548,14 +556,15 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     out.seed3 = $('in').value.trim(); out.boxFp2 = $('infpv').textContent;
     $('in').dispatchEvent(new Event('input'));
     out.goneOnEdit = $('infp').style.display==='none';
-    // the reserved right padding must cover the control strip in every field,
-    // or a long first line runs underneath the icons
-    const covers = (area, ctl) => {
-      const a=area.getBoundingClientRect(), c=ctl.getBoundingClientRect();
-      return parseFloat(getComputedStyle(area).paddingRight) >= (a.right - c.left) - 1;
-    };
-    out.padOk = covers($('in'), $('inctl')) && covers($('gseed'), $('gctl'));
-    out.padWhy = 'panel 3 '+covers($('in'),$('inctl'))+', panel 1 '+covers($('gseed'),$('gctl'));
+    out.padFinish = covers($('in'), $('inctl'));
+    // and the rolls box, whose eye rides in the same corner
+    $('dicepath').open = true;
+    await new Promise(z=>setTimeout(z,80));
+    $('rolls').value = ${JSON.stringify(ROLLS51)};
+    $('rolls').dispatchEvent(new Event('input'));
+    out.padRoll = covers($('rolls'), $('rollctl'));
+    out.padOk = out.padMake && out.padFinish && out.padRoll;
+    out.padWhy = 'make '+out.padMake+', finish '+out.padFinish+', roll '+out.padRoll;
     return out;`);
   chk('master fingerprint anchor is 73c5da0a and Node agrees', !fpr.err
       && fpr.anchor === '73c5da0a' && nodeFp('abandon '.repeat(11) + 'about') === '73c5da0a',
@@ -807,37 +816,102 @@ async function guardChecks(browser, base) {
       JSON.stringify(r));
 
   await p.goto(base + '/index.html');
-  // Three fields now, so coming back has to re-blur all of them. A seed made in
-  // panel 1 and one rolled in panel 2 can both be on screen at once.
+  // Only one panel holds anything at a time now, so this runs twice: the back
+  // button has to re-blur a made seed and wipe the QR with it, then a rolled seed
+  // and the rolls behind it. Coming back erases nothing — only closing does.
   r = await p.evaluate(`${HELPERS}
     $('makepath').open = true;
     $('genlen').value='12'; $('genfull').click();
-    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
-    $('dicepath').open = true;
-    $('rolls').value = ${JSON.stringify(ROLLS51)};
-    $('rolls').dispatchEvent(new Event('input'));
-    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
-    $('dicego').click();
-    if(!await wait(()=>$('dseed').classList.contains('shield'))) return {err:'panel 2 timeout'};
-    // reveal both, and open a QR from one of them
-    $('gpeek').click(); $('dpeek').click();
-    const revealed = !$('gseed').classList.contains('shield')
-                  && !$('dseed').classList.contains('shield');
-    const made=$('gseed').value, rolled=$('dseed').value;
+    if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
+    $('gpeek').click();
+    const revealed = !$('gseed').classList.contains('shield');
+    const made = $('gseed').value;
     $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never drew'};
     dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
     await wait(()=>$('gseed').classList.contains('shield'));
     return {revealed,
-      reblurred: $('gseed').classList.contains('shield')
-              && $('dseed').classList.contains('shield'),
-      seedKept: $('gseed').value===made && $('dseed').value===rolled,
+      reblurred: $('gseed').classList.contains('shield'),
+      seedKept: $('gseed').value===made,
       qrClosed:$('qrveil').style.display==='none',
       canvasWiped:$('qrcanvas').width===1};`);
-  chk('coming back re-blurs every field that holds a seed, and wipes the QR', !r.err
+  chk('coming back re-blurs a made seed and wipes the QR, without erasing it', !r.err
       && r.revealed && r.reblurred && r.seedKept && r.qrClosed && r.canvasWiped,
       r.err || JSON.stringify(r));
 
+  await p.goto(base + '/index.html');
+  r = await p.evaluate(`${HELPERS}
+    $('dicepath').open = true;
+    $('rolls').value = ${JSON.stringify(ROLLS51)};
+    $('rolls').dispatchEvent(new Event('input'));
+    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
+    $('dicego').click();
+    if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
+    $('dpeek').click(); setDicePeek(false);
+    const revealed = !$('dseed').classList.contains('shield')
+                  && !$('rolls').classList.contains('shield');
+    const rolled = $('dseed').value, rollstr = $('rolls').value;
+    dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
+    await wait(()=>$('dseed').classList.contains('shield'));
+    return {revealed,
+      reblurred: $('dseed').classList.contains('shield')
+              && $('rolls').classList.contains('shield'),
+      kept: $('dseed').value===rolled && $('rolls').value===rollstr};`);
+  chk('coming back re-blurs a rolled seed and the rolls behind it, without erasing',
+      !r.err && r.revealed && r.reblurred && r.kept, r.err || JSON.stringify(r));
+
+
+  await p.goto(base + '/index.html');
+  // Folding a panel away empties it. A blurred seed left in a closed panel is
+  // still a seed on screen for whoever opens that tab next, so closing runs the
+  // panel's own Clear: the field, the rolls, and everything derived from them.
+  r = await p.evaluate(`${HELPERS}
+    const tick = () => new Promise(z=>setTimeout(z,80));
+    const shut = id => { $(id).querySelector('summary').click(); return tick() };
+    $('makepath').open = true; await tick();
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
+    $('gpeek').click();                            // reveal it, as a reader would
+    if($('gseed').classList.contains('shield')) return {err:'panel 1 never revealed'};
+    await shut('makepath');                        // press its own tab button
+    const madeGone = $('gseed').value === '' && $('gctl').style.display === 'none'
+                  && $('gfp').style.display === 'none' && !$('gwrap').classList.contains('on');
+    // and still empty when the panel comes back, not merely covered
+    $('makepath').open = true; await tick();
+    const stillGone = $('gseed').value === '';
+
+    $('dicepath').open = true; await tick();
+    $('rolls').value = ${JSON.stringify(ROLLS51)};
+    $('rolls').dispatchEvent(new Event('input'));
+    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
+    $('dicego').click();
+    if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
+    await shut('dicepath');
+    // the rolls are the seed one step earlier, so they go too
+    const rollGone = $('dseed').value === '' && $('rolls').value === ''
+                  && $('dicecount').textContent.startsWith('0 ')
+                  && $('dicequal').textContent === '' && $('dicego').disabled;
+
+    $('finishpath').open = true; await tick();
+    $('in').value = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon';
+    $('go').click();
+    if(!await wait(()=>$('grid').children.length > 0)) return {err:'panel 3 never listed'};
+    await shut('finishpath');
+    const typedGone = $('in').value === '' && $('grid').children.length === 0
+                   && $('out').style.display === 'none' && $('st').textContent === '';
+
+    // opening one panel wipes whichever was open before it
+    $('makepath').open = true; await tick();
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout (2)'};
+    $('dicepath').open = true; await tick();
+    const wipedBySwitch = $('gseed').value === '' && !$('makepath').open;
+    return {madeGone, stillGone, rollGone, typedGone, wipedBySwitch};`);
+  chk('closing a panel empties it, and opening another wipes the one it replaces',
+      !r.err && r.madeGone && r.stillGone && r.rollGone && r.typedGone && r.wipedBySwitch,
+      r.err || JSON.stringify(r));
+
+  await p.goto(base + '/index.html');
   // typed words live in panel 3; this is its field, not a made seed
   r = await p.evaluate(`${HELPERS} $('finishpath').open=true; $('clr').click();
     $('in').value='abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon';
@@ -1128,56 +1202,71 @@ async function diceChecks(browser, base) {
       && r.ownControls && r.noBleed && r.labels.length===3,
       JSON.stringify(r));
 
-  // The whole point of three panels: fill all three, then clear one. A Clear that
-  // reaches past its own panel used to be the default, because scrubDerived()
-  // wipes everything and panel 3's Clear called it.
+  // A Clear must not reach past its own panel. Panels no longer hold anything at
+  // the same time — closing one empties it — so the neighbours are planted
+  // directly and have to survive. A Clear wired to scrubDerived(), which wipes
+  // every field on the page, is what this catches.
   r = await p.evaluate(`${HELPERS}
-    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    const plant = () => { $('gseed').value='PLANT-MAKE'; $('dseed').value='PLANT-ROLL';
+                          $('rolls').value='123456';    $('in').value='PLANT-FINISH' };
+    const held = () => [$('gseed').value, $('dseed').value, $('rolls').value, $('in').value];
+    plant(); $('clr').click();     const afterFinish = held();
+    plant(); $('gclr').click();    const afterMake   = held();
+    plant(); $('diceclr').click(); const afterRoll   = held();
+    // and the two generators really are separate: same page, two different seeds
+    const tick = () => new Promise(z=>setTimeout(z,80));
+    $('makepath').open=true; await tick();
+    $('genlen').value='12'; $('genfull').click();
     if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
-    $('dicepath').open=true;
+    const made = $('gseed').value;
+    $('dicepath').open=true; await tick();
     $('rolls').value=${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
     if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
     $('dicego').click();
     if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
-    $('finishpath').open=true;
-    $('in').value='abandon '.repeat(11).trim(); $('go').click();
-    if(!await wait(()=>$('out').style.display==='block')) return {err:'panel 3 timeout'};
-    const held = () => [!!$('gseed').value, !!$('dseed').value, !!$('in').value];
-    const all = held();
-    // three distinct seeds, none equal to another
-    const distinct = new Set([$('gseed').value, $('dseed').value]).size === 2;
-    $('clr').click();      const afterFinish = held();
-    $('gclr').click();     const afterMake   = held();
-    $('diceclr').click();  const afterRoll   = held();
-    return { all, distinct, afterFinish, afterMake, afterRoll,
-             rollsAlsoCleared: $('rolls').value === '' };`);
-  chk('each panel holds its own seed, and each Clear touches only its own panel',
-      !r.err && r.all.join()==='true,true,true' && r.distinct
-      && r.afterFinish.join()==='true,true,false'
-      && r.afterMake.join()==='false,true,false'
-      && r.afterRoll.join()==='false,false,false' && r.rollsAlsoCleared,
+    return { afterFinish, afterMake, afterRoll, distinct: made !== $('dseed').value };`);
+  chk('each Clear touches only its own panel, and the panels do not share a seed',
+      !r.err && r.distinct
+      && r.afterFinish.join()==='PLANT-MAKE,PLANT-ROLL,123456,'
+      && r.afterMake.join()===',PLANT-ROLL,123456,PLANT-FINISH'
+      && r.afterRoll.join()==='PLANT-MAKE,,,PLANT-FINISH',
       r.err || JSON.stringify(r));
 
   // Invariant 7 used to govern one field and now governs three: a seed in any of
-  // them must come back blurred and must not survive into a saved copy.
+  // them is born blurred and must not survive into a saved copy. Checked one
+  // panel at a time, because an open panel is the only one holding anything.
   r = await p.evaluate(`${HELPERS}
-    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    const tick = () => new Promise(z=>setTimeout(z,80));
+    // what File > Save Page As would write, right now
+    const saved = () => '<!doctype html>' + document.documentElement.outerHTML;
+    const out = {born: [], fps: [], seedsInBytes: false, fpsInBytes: false};
+    const look = (seed, fp) => {
+      const doc = saved();
+      out.fps.push(fp);
+      if (!seed) { out.err = 'empty seed'; return }
+      if (doc.includes(seed)) out.seedsInBytes = true;
+      if (doc.includes(fp))   out.fpsInBytes   = true;
+    };
+    $('makepath').open=true; await tick();
+    $('genlen').value='12'; $('genfull').click();
     if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
-    $('dicepath').open=true;
+    if(!await wait(()=>$('gfpv').textContent!=='…')) return {err:'panel 1 fp timeout'};
+    out.born.push($('gseed').classList.contains('shield'));
+    look($('gseed').value, $('gfpv').textContent);
+
+    $('dicepath').open=true; await tick();
     $('rolls').value=${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
     if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
     $('dicego').click();
     if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
-    await wait(()=>$('gfpv').textContent!=='…' && $('dfpv').textContent!=='…');
-    const born = $('gseed').classList.contains('shield') && $('dseed').classList.contains('shield');
-    const fps  = [$('gfpv').textContent, $('dfpv').textContent];
-    // what File > Save Page As would write
-    const doc = '<!doctype html>' + document.documentElement.outerHTML;
-    return { born, fps,
-      seedsInBytes: doc.includes($('gseed').value) || doc.includes($('dseed').value),
-      fpsInBytes: fps.some(f => doc.includes(f)) };`);
+    if(!await wait(()=>$('dfpv').textContent!=='…')) return {err:'panel 2 fp timeout'};
+    out.born.push($('dseed').classList.contains('shield'));
+    look($('dseed').value, $('dfpv').textContent);
+    return out;`);
   chk('seeds in every panel are born hidden and never reach a saved copy',
-      !r.err && r.born && r.fps.every(f => /^[0-9a-f]{8}$/.test(f)) && !r.seedsInBytes,
+      !r.err && r.born.length===2 && r.born.every(Boolean)
+      && r.fps.length===2 && r.fps.every(f => /^[0-9a-f]{8}$/.test(f))
+      && !r.seedsInBytes && r.fpsInBytes,
       r.err || JSON.stringify(r));
 
   // 8. the heading survives a phone. A fixed-width button beside a flexible
