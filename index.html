@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
-<meta name="description" content="Find every valid final word for the words you have, or make a complete BIP-39 seed — from your browser's randomness or your own dice rolls. One self-contained file — works offline, never touches the internet, SeedQR export.">
+<meta name="description" content="Find every valid final word for the words you have, or make a complete BIP-39 seed from your browser's randomness or your own dice rolls. One self-contained file that works offline, never touches the internet, SeedQR export.">
 <title>My Seed Phrase</title>
 <!-- The same mark as the header, inline. A data: URI is not a fetch, so this adds
      no request — it removes one, the automatic /favicon.ico that would 404. -->
@@ -623,10 +623,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
   </div>
   <h1>My <em>Seed Phrase</em><span class="tipwrap"><button class="tipbtn" type="button"
       aria-label="Why this page is safe to use">i</button><span class="tipbox" role="tooltip"
-      ><b>Nothing</b> leaves this page.<br><b>Offline</b> — works with the wi-fi
-      off.<br><b>One page</b> — nothing to install.</span></span></h1>
+      ><b>Nothing</b> leaves this page.<br><b>Offline</b>: works with the wi-fi
+      off.<br><b>One page</b>: nothing to install.</span></span></h1>
   <p class="dek"><b>The BIP-39 last-word calculator &amp; seed generator.</b> The last word is
-     never a free choice. Give the app your words and it returns every valid ending — or makes
+     never a free choice. Give the app your words and it returns every valid ending, or makes
      a whole seed, from the browser's randomness or your own dice. Nothing touches the
      internet.</p>
   <div class="ctarow">
@@ -635,40 +635,40 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
   <div class="warn">
     <details>
-      <summary>How to run myseedphrase.app safely — 6 steps</summary>
+      <summary>How to run myseedphrase.app safely, in 6 steps</summary>
       <p><b>Run this offline for anything real.</b> This page never sends anything anywhere,
-      and it tells your browser to refuse if it ever tried — but that only makes this page
+      and it tells your browser to refuse if it ever tried, but that only makes this page
       safe, not the browser it runs in or the computer underneath it.</p>
       <p><b>Browser extensions are the risk this page cannot touch.</b> Anything you have added
-      to your browser — a password manager, an ad blocker, a coupon or shopping tool — can read
+      to your browser (a password manager, an ad blocker, a coupon or shopping tool) can read
       every word you type here and every phrase this page produces. No web page can stop that,
       including this one. Private and Incognito windows are not a reliable defence either:
       Chrome and Firefox switch extensions off in them by default, but it is a per-extension
-      setting many people turn back on — and <b>Safari leaves them running in Private
+      setting many people turn back on, and <b>Safari leaves them running in Private
       Browsing</b>. Use a separate browser profile with nothing added to it.</p>
       <ol>
         <li><b>Get the file while you are still online.</b>
             <a href="https://github.com/seQRets/My-Seed-Phrase/releases/latest/download/index.html"
-               target="_blank" rel="noopener noreferrer">Download the latest release</a> — one
+               target="_blank" rel="noopener noreferrer">Download the latest release</a>: one
             file, nothing to install, and the only copy whose fingerprint matches the one
             published beside it on the release page. Your browser's Save Page As works too, but
             rewrites the file as it saves, so that copy can never match. Compare the two before
             you open it: this is the one check that catches a tampered copy.</li>
-        <li>Make a fresh browser profile — Chrome/Edge: profile icon → Add; Firefox:
+        <li>Make a fresh browser profile. Chrome/Edge: profile icon → Add; Firefox:
             <code>about:profiles</code> → Create a New Profile. Install nothing into it,
             sign in to nothing.</li>
         <li>Turn off Wi-Fi and unplug any internet cable.</li>
         <li>Open a private window in that profile and drag the downloaded file onto it.</li>
-        <li>Check the badge below reads <b>Offline — safe to generate</b>, then press
+        <li>Check the badge below reads <b>Offline: safe to generate</b>, then press
             <b>Verify this page</b> and confirm it says <b>15 of 15 checks passed</b>.
             That makes the page work out answers already published in the BIP-39 standard
-            and take a fingerprint of its own built-in word list — an altered copy gets
+            and take a fingerprint of its own built-in word list. An altered copy gets
             those wrong. What it cannot do is prove this copy is the one that was
             published: a tampered copy with an honest word list and honest arithmetic
             would still pass every check here. That is what step 1’s fingerprint is for.
             It needs no connection, and it checks the page, not your computer.
             <div class="row"><button id="test">Verify this page</button></div></li>
-        <li>Write the phrase down by hand — never the copy or download buttons. Do not save
+        <li>Write the phrase down by hand, never the copy or download buttons. Do not save
             the page again once a phrase is on screen: that writes what you can see to
             disk. Then quit the browser completely before reconnecting.</li>
       </ol>
@@ -752,7 +752,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
     <textarea id="rolls" spellcheck="false" autocomplete="off" autocapitalize="off"
       autocorrect="off" inputmode="numeric"
-      placeholder="type each roll as you go — 4 3 1 2 5 6 …"></textarea>
+      placeholder="type each roll as you go: 4 3 1 2 5 6 …"></textarea>
     <div class="rollrow">
       <span class="rollof">Rolls</span>
       <span class="rollnum" id="dicecount">0</span>
@@ -779,7 +779,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="h">Your seed</div>
     <div class="inwrap" id="inwrap">
     <textarea id="in" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
-      placeholder="type, paste or generate an incomplete seed, separated by spaces — or generate a complete seed instead"></textarea>
+      placeholder="type, paste or generate an incomplete seed, separated by spaces, or generate a complete seed instead"></textarea>
     <div class="inctl" id="inctl" style="display:none">
       <button class="ictl" id="peek" type="button" aria-label="Show the seed" aria-pressed="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -833,12 +833,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <details>
         <summary>Why would I use this tool? What does it do for me?</summary>
         <p>It does three jobs. <b>Finish a seed:</b> if you chose your first 11, 14, 17, 20 or
-        23 words yourself — by dice, by hand, or with another tool — a wallet will still reject
+        23 words yourself (by dice, by hand, or with another tool), a wallet will still reject
         the phrase unless the last word carries the right checksum. Type your words in and this
         page computes every last word that works. <b>Create a seed:</b> two ways, both entirely on
         your machine. The generate buttons draw a brand-new phrase from your browser's
         cryptographic randomness; or roll a die yourself, type the numbers in, and the app
-        turns your rolls into the words — slower, and the one route that does not ask you to
+        turns your rolls into the words: slower, and the one route that does not ask you to
         trust the browser's randomness at all. <b>Understand a seed:</b> the questions below explain why the
         last word is special, what the checksum does, and what makes a phrase strong or weak.
         For a seed that will guard real money, follow the six steps at the top and run this
@@ -847,35 +847,35 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
       <details>
         <summary>What do all the buttons actually do?</summary>
-        <p><b>Find checksum words</b> — takes the words in the box and lists every valid final
+        <p><b>Find checksum words</b> takes the words in the box and lists every valid final
         word for them. Click any candidate to see the completed phrase.</p>
         <p><b>Generate 11 words</b> (or 14, 17, 20, 23, depending on the seed length you
-        chose) — draws that many random words and calculates their valid endings, but leaves
+        chose) draws that many random words and calculates their valid endings, but leaves
         the choice of ending to you. Use it when you want to see the candidates and pick your
         own.</p>
-        <p><b>Generate all 12</b> (or all 15, 18, 21, 24) — does everything in one press:
+        <p><b>Generate all 12</b> (or all 15, 18, 21, 24) does everything in one press:
         draws the random words, calculates the endings, and picks one at random too. The finished, wallet-ready
         phrase lands in the box, blurred until the eye button reveals it.</p>
-        <p><b>Pick at random</b> — once endings are listed, lets the browser's cryptographic
+        <p><b>Pick at random</b>: once endings are listed, lets the browser's cryptographic
         generator choose one for you instead of you clicking a favourite.
-        <b>Roll</b> — opens the dice route: choose the length you want, roll a six-sided die
+        <b>Roll</b> opens the dice route: choose the length you want, roll a six-sided die
         that many times, and type each number as you go. The count tells you how many rolls
-        are still needed — 50 for a 12-word seed, 100 for 24. <b>Make a seed</b> turns the
+        are still needed: 50 for a 12-word seed, 100 for 24. <b>Make a seed</b> turns the
         finished rolls into words, <b>Clear rolls</b> wipes them, and <b>Hide rolls</b> covers
         them the way the eye button covers the words.</p>
-        <p><b>Load example</b> — fills the box with the BIP-39 standard's published test
+        <p><b>Load example</b> fills the box with the BIP-39 standard's published test
         phrase. Safe to experiment with; never use it for real funds.</p>
-        <p><b>Verify this page</b> — runs the built-in self-test: the page recomputes answers
+        <p><b>Verify this page</b> runs the built-in self-test: the page recomputes answers
         published in the BIP-39 standard and checks its own word list is unaltered.</p>
-        <p><b>Clear</b> — empties the box and all results.</p>
+        <p><b>Clear</b> empties the box and all results.</p>
       </details>
 
       <div class="grp2">The last word</div>
 
       <details>
         <summary>Why can’t I just choose my own last word?</summary>
-        <p>Because the last word is not a free choice. It carries a short summary — a
-        checksum — of every word before it, so only a small set of words produce a phrase a
+        <p>Because the last word is not a free choice. It carries a short summary, a
+        checksum, of every word before it, so only a small set of words produce a phrase a
         wallet will accept. Pick any other and the wallet rejects the whole phrase as invalid.
         Working out which words qualify is what this page is for.</p>
       </details>
@@ -900,7 +900,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <details>
         <summary>Why do longer phrases give fewer choices?</summary>
         <p>Because a longer phrase spends more of its last word on the checksum, leaving less
-        room for choice. Picking one word out of 2048 takes 11 yes-or-no answers — a bit is one
+        room for choice. Picking one word out of 2048 takes 11 yes-or-no answers, and a bit is one
         such answer. In a 12-word phrase the checksum claims 4 of the last word’s 11, leaving 7
         free, and 7 yes-or-no answers cover 128 endings. In a 24-word phrase the checksum claims
         8 and leaves only 3, so just 8 words can finish it. Every extra answer the checksum
@@ -910,14 +910,14 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <details>
         <summary>What if the missing word is not the last one?</summary>
         <p>This page only works out the final word. If a word is missing from somewhere in the
-        middle, the checksum still narrows it down — for a 12-word phrase, to roughly 128 of the
-        2048 possibilities — but that is a different search, and this page does not do it.</p>
+        middle, the checksum still narrows it down (for a 12-word phrase, to roughly 128 of the
+        2048 possibilities) but that is a different search, and this page does not do it.</p>
       </details>
 
       <details>
         <summary>Does the checksum give away anything about my other words?</summary>
         <p>No. The checksum is derived <em>from</em> your words, not the other way round, and it
-        is not part of the secret — it exists so a wallet can catch a typo instead of silently
+        is not part of the secret. It exists so a wallet can catch a typo instead of silently
         opening an empty account. Someone holding only your last word learns nothing useful
         about the rest.</p>
       </details>
@@ -933,12 +933,12 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         draw lands on a word directly instead of being squeezed down to fit. That matters:
         squeezing is what makes some words come up slightly more often than others. Here every
         word is exactly as likely as every other.</p>
-        <p>Both generate buttons use it — the longer one draws every word including the
+        <p>Both generate buttons use it: the longer one draws every word including the
         ending in one press, and the shorter one stops a word short so you can see the checksum
         at work and choose the ending yourself. Either way
         ends at the same place: a phrase whose every word came from the generator.</p>
         <p>One route does not use it at all. Roll your own dice, type the numbers in, and your
-        rolls decide every word — the app only does the arithmetic. That is the slow way, and
+        rolls decide every word; the app only does the arithmetic. That is the slow way, and
         the only one that does not ask you to take either the browser's generator or this page
         on trust. The same rolls always make the same words, so a hardware wallet given those
         same rolls can be used to check this page's answer rather than believe it.</p>
@@ -947,14 +947,14 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <details>
         <summary>What do the dice actually do?</summary>
         <p>Each throw of a six-sided die is one of six equally likely results, and the app
-        collects enough of them to decide every word — 50 throws for a 12-word seed, 100 for a
+        collects enough of them to decide every word: 50 throws for a 12-word seed, 100 for a
         24-word one, with a running count so you know when you have enough. Nothing is drawn
         from the browser. Your throws decide all of the words, including the last one, which
         also carries the check that makes a wallet accept the phrase.</p>
         <p>The same throws always make the same seed. That is the point of doing it this way:
         a hardware wallet given those same throws should produce the same words, which lets you
         check this page rather than believe it. It also means the numbers are exactly as secret
-        as the phrase — anyone who has them can work out every word, on any computer, for ever.
+        as the phrase: anyone who has them can work out every word, on any computer, for ever.
         Keep them until the words are written down and checked, then destroy the paper you
         threw onto.</p>
         <p>A cheap die is not perfectly fair. If you are unsure about yours, throw more than
@@ -964,7 +964,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
       <details>
         <summary>What does the read-out under the input box measure?</summary>
-        <p>Not entropy — nothing can. Entropy is about <em>how</em> your words were chosen, not
+        <p>Not entropy; nothing can. Entropy is about <em>how</em> your words were chosen, not
         about the words themselves, so a genuinely random set can look terrible and a hand-picked
         one can look fine. What it actually does is hunt for the fingerprints of hand-picking:
         the same word repeated, words sitting in wordlist order, words bunched into one short
@@ -977,8 +977,8 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
       <details>
         <summary>Why do 23 identical words score only 11 bits?</summary>
-        <p>Because “the same word 23 times” is only 2048 different phrases — one for each word
-        in the list — and singling out one in 2048 takes 11 yes-or-no answers. Repeating the word
+        <p>Because “the same word 23 times” is only 2048 different phrases, one for each word
+        in the list, and singling out one in 2048 takes 11 yes-or-no answers. Repeating the word
         more times adds nothing at all: every word after the first is already decided. A 23-word
         repeat is exactly as weak as an 11-word repeat, which is the clearest demonstration there
         is that a long phrase is not automatically a strong one.</p>
@@ -994,7 +994,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <p>Dice close part of the gap. Roll them yourself and the words no longer rest on the
         browser's generator being sound, or on this page being the copy that was published:
         the randomness came off your table. The computer is still the computer, so the six
-        steps still matter — but it is one less thing to take on trust.</p>
+        steps still matter, but it is one less thing to take on trust.</p>
       </details>
 
       <div class="grp2">Trust and privacy</div>
@@ -1016,13 +1016,13 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <p>So if the phrase is real, do it the other way round: save this page, disconnect from
         the internet, open it in a browser profile with no extensions, and work through the six
         steps at the top. And if you only want to see how this works, you do not need a real
-        phrase at all — press <b>Load example</b>, or either generate button.</p>
+        phrase at all: press <b>Load example</b>, or either generate button.</p>
       </details>
 
       <details>
         <summary>Does anything I type here leave my computer?</summary>
         <p>No. The page never sends anything anywhere, and it tells your browser to block the
-        attempt if it ever tried — nothing at all is fetched from the internet, not a typeface,
+        attempt if it ever tried. Nothing at all is fetched from the internet, not a typeface,
         not an image, not a line of code. Nothing is saved or logged either. That covers this
         page only, though: a browser extension can read what you type here, and no web page can
         stop it.</p>
@@ -1071,7 +1071,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
           <p>A standard SeedQR: a hardware wallet that can scan one imports this seed
           directly, with nothing typed on the device.</p>
           <p><b>A phone will show numbers, not words.</b> That is what a SeedQR is: four
-          digits for each word, giving its place in the standard word list — 48 digits
+          digits for each word, giving its place in the standard word list: 48 digits
           for a twelve-word seed, 96 for twenty-four. Those numbers <b>are</b> your
           words. A signing device turns them straight back into the phrase, so load this
           from your wallet's own seed-import screen; a plain camera app will only ever
@@ -1088,15 +1088,15 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.7 · RUNS OFFLINE</div>
+    <div class="r">v1.7.8 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
-        Wordlist: the official BIP-39 English list from <code>bitcoin/bips</code> (MIT), embedded verbatim —
+        Wordlist: the official BIP-39 English list from <code>bitcoin/bips</code> (MIT), embedded verbatim.
         SHA-256 <button type="button" class="hash" id="wlhash" aria-expanded="false"
         title="Show the whole value">2f5eed53a4727b4bf8880d8f3f199efc90e58503646d9ff8eff3a2ed3b24dbda</button>.
         Hashing uses the browser's native <code>crypto.subtle</code>. QR encoding by
-        <code>kazuhikoarase/qrcode-generator</code> (MIT), embedded verbatim — “QR Code” is a
+        <code>kazuhikoarase/qrcode-generator</code> (MIT), embedded verbatim. “QR Code” is a
         registered trademark of DENSO WAVE INCORPORATED. No fonts, scripts, styles or images are
         loaded from the internet.
       </div>
@@ -1109,7 +1109,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       <a href="https://mypassphrase.app" target="_blank" rel="noopener noreferrer">
         <span class="g" aria-hidden="true">↗</span> mypassphrase.app</a>
     </div>
-    <div class="copyline">Copyright © 2026 Toothjockey LLC — MIT licensed, and open source so
+    <div class="copyline">Copyright © 2026 Toothjockey LLC. MIT licensed, and open source so
       you can check all of this.</div>
   </footer>
 </main>
@@ -3464,8 +3464,8 @@ function parse(raw) {
   const words = raw.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return { err: "Enter your words above." };
   const bad = [...new Set(words.filter(w => !IDX.has(w)))];
-  if (bad.length) return { err: "Not BIP-39 words — " + bad.join(", ") };
-  if (!CFG[words.length]) return { err: `${words.length} words entered. Give 11, 14, 17, 20 or 23 — one short of a full phrase.` };
+  if (bad.length) return { err: "Not BIP-39 words: " + bad.join(", ") };
+  if (!CFG[words.length]) return { err: `${words.length} words entered. Give 11, 14, 17, 20 or 23, one short of a full phrase.` };
   return { words };
 }
 
@@ -3553,7 +3553,7 @@ function showControls() {
   if ([12, 15, 18, 21, 24].includes(words.length)) {
     const bad = [...new Set(words.filter(w => !IDX.has(w)))];
     if (bad.length) {
-      seedVerdict(false, "Not a valid seed — these are not BIP-39 words: " + bad.join(", "));
+      seedVerdict(false, "Not a valid seed. These are not BIP-39 words: " + bad.join(", "));
     } else {
       const token = ++qrOfferCount;
       candidates(words.slice(0, -1)).then(list => {
@@ -3563,7 +3563,7 @@ function showControls() {
           $("inqr").style.display = "";
           showBoxFingerprint();
         } else {
-          seedVerdict(false, "Not a valid seed — the last word fails the checksum. Enter the "
+          seedVerdict(false, "Not a valid seed. The last word fails the checksum. Enter the "
             + "first " + (words.length - 1) + " words and press Find checksum words to see "
             + "every ending that works.");
         }
@@ -3645,7 +3645,7 @@ async function calculate(reveal = true) {
       seedVerdict(true);
       $("inqr").style.display = "";
       $("randnote").style.display = "block";
-      $("randnote").textContent = `“${w}” is word ${CFG[prefix.length].n} — the completed seed, `
+      $("randnote").textContent = `“${w}” is word ${CFG[prefix.length].n}: the completed seed, `
         + `its fingerprint, its QR and the copy control are all in the box at the top.`;
     };
     $("grid").appendChild(el);
@@ -3717,13 +3717,13 @@ async function selfTest() {
       const hit = got.includes(v.want);
       const pass = hit && got.length === v.count && new Set(got).size === got.length;
       if (pass) calcOk++;
-      detail.push(row(v.label, `${v.note} — must end in “${v.want}”`,
+      detail.push(row(v.label, `${v.note}, must end in “${v.want}”`,
         (got.length === v.count ? `found all ${v.count} endings`
                                 : `found ${got.length} endings, expected ${v.count}`)
         + (hit ? `, “${v.want}” among them` : `, but “${v.want}” is missing`), pass));
     } catch (e) {
-      detail.push(row(v.label, `${v.note} — must end in “${v.want}”`,
-        "could not be worked out at all — the built-in word list is not the one "
+      detail.push(row(v.label, `${v.note}, must end in “${v.want}”`,
+        "could not be worked out at all: the built-in word list is not the one "
         + "this page was built with", false));
     }
   }
@@ -3761,7 +3761,7 @@ async function selfTest() {
               : !accepted ? "chose an ending its own checksum rejects"
               : repeats.size !== 4 ? "repeated draws came out identical"
               : `all ${lengths.length} lengths valid, repeated draws all different`;
-  } catch (e) { genOk = false; genResult = "failed — " + e.message }
+  } catch (e) { genOk = false; genResult = "failed: " + e.message }
   detail.push(row("Phrases it generates for you",
     "every word drawn at random, and the ending must be one its own checksum accepts",
     genResult, genOk));
@@ -3786,8 +3786,8 @@ async function selfTest() {
     const v39 = await masterFingerprint([...Array(11).fill("abandon"), "about"]);
     fpOk = ripOk && ecOk && v32 === "3442193e" && v39 === "73c5da0a";
     fpResult = fpOk ? "matches the published BIP-32 and RIPEMD-160 test vectors"
-                    : "WRONG — do not trust the fingerprint shown under the QR";
-  } catch (e) { fpOk = false; fpResult = "failed — " + e.message }
+                    : "WRONG: do not trust the fingerprint shown under the QR";
+  } catch (e) { fpOk = false; fpResult = "failed: " + e.message }
   detail.push(row("The master fingerprint derivation",
     "the two primitives this file implements itself, held to published vectors",
     fpResult, fpOk));
@@ -3813,16 +3813,16 @@ async function selfTest() {
       && ends.includes(w12[11]);
     diceResult = diceOk
       ? `the published roll vector still gives “…${w12.slice(-2).join(" ")}”, and its checksum agrees`
-      : "WRONG — do not use the dice route on this copy";
-  } catch (e) { diceOk = false; diceResult = "failed — " + e.message }
+      : "WRONG: do not use the dice route on this copy";
+  } catch (e) { diceOk = false; diceResult = "failed: " + e.message }
   detail.push(row("Seeds made from dice",
     "a fixed roll sequence must give the same words every time, and pass the checksum above",
     diceResult, diceOk));
 
   const listHash = await sha256Text(WORDS.join("\n") + "\n");
   const listOk = listHash === WORDLIST_SHA256;
-  const listResult = listOk ? `unchanged — SHA-256 ${listHash.slice(0, 10)}…`
-                            : `ALTERED — got ${listHash.slice(0, 10)}…`;
+  const listResult = listOk ? `unchanged: SHA-256 ${listHash.slice(0, 10)}…`
+                            : `ALTERED: got ${listHash.slice(0, 10)}…`;
   detail.push(row("The built-in word list",
     "must be the official BIP-39 English list, unchanged", listResult, listOk));
 
@@ -3832,7 +3832,7 @@ async function selfTest() {
          && WORDS.length === 2048 && new Set(randomWords(64)).size > 1;
   } catch (e) { rngOk = false }
   const rngResult = rngOk ? "present and working"
-                          : "missing — do not generate a phrase here";
+                          : "missing: do not generate a phrase here";
   detail.push(row("Your browser’s random number generator",
     "the generate and “Pick at random” buttons depend on it", rngResult, rngOk));
 
@@ -3886,8 +3886,8 @@ function netBadge() {
   const b = $("badge");
   b.className = "badge " + (online ? "on" : "off");
   $("badgetxt").textContent = online
-    ? (local ? "Online — disconnect first" : "Online — your secret is at risk")
-    : "Offline — safe to generate";
+    ? (local ? "Online: disconnect first" : "Online: your secret is at risk")
+    : "Offline: safe to generate";
 }
 
 /* ---- generating words ----------------------------------------------- */
@@ -3996,7 +3996,7 @@ function updateMeter() {
       + `That could cut your ${a.ceiling} to <b>at most ${Math.round(a.bits)}</b>. `
       + `Generate the words at random instead.`
     : `<b class="${cls}">No hand-picking patterns found.</b> That is not proof your words are `
-      + `random — only that nothing obvious is wrong with them.`;
+      + `random, only that nothing obvious is wrong with them.`;
 }
 
 /* ---- theme ---------------------------------------------------------- */
@@ -4074,7 +4074,7 @@ function pickAtRandom() {
   $("randnote").textContent =
     `Picked “${current[i]}” with your browser’s random number generator, the one built for `
     + `security work. Letting it choose the ending is worth ${tail} yes-or-no answers of `
-    + `randomness — all the rest has to come from the ${prefix.length} words you supplied, so `
+    + `randomness; all the rest has to come from the ${prefix.length} words you supplied, so `
     + `those need to have been chosen at random too. The completed seed is in the box at `
     + `the top.`;
 }
@@ -4092,7 +4092,7 @@ $("genfull").onclick = async () => {
     $("in").value = randomWords(+$("genlen").value).join(" ");
   } catch (e) {
     $("st").className = "status bad";
-    $("st").textContent = "✕  " + e.message + " — do not use this page to generate a phrase.";
+    $("st").textContent = "✕  " + e.message + ". Do not use this page to generate a phrase.";
     return;
   }
   // calculate() has already said why if it could not finish. No scrolling in
@@ -4102,7 +4102,7 @@ $("genfull").onclick = async () => {
   whole = true;
   pickAtRandom();
   const cfg = CFG[prefix.length];
-  $("st").textContent = `✓  Complete ${cfg.n}-word seed in the box above — its ending was `
+  $("st").textContent = `✓  Complete ${cfg.n}-word seed in the box above: its ending was `
     + `picked from the ${current.length} valid endings below.`;
   // it arrives hidden; the eye reveals it
   shieldOn();
@@ -4213,7 +4213,7 @@ function updateDice() {
   } else if (best < diceTarget) {
     const next = Object.keys(DICE).map(Number).find(w => w > best && w <= diceTarget);
     $("dicenote").textContent = `Enough for a ${best}-word seed. `
-      + `Keep going for ${next} — that needs ${DICE[next]}.`;
+      + `Keep going for ${next}: that needs ${DICE[next]}.`;
   } else {
     $("dicenote").textContent = `Enough for a ${diceTarget}-word seed.`;
   }
@@ -4225,7 +4225,7 @@ function updateDice() {
     $("dicequal").textContent = ""; $("dicequal").className = "hint";
   } else if (q.flags.length) {
     $("dicequal").className = "hint bad-c";
-    $("dicequal").textContent = "⚠︎ These rolls do not look rolled — "
+    $("dicequal").textContent = "⚠︎ These rolls do not look rolled: "
       + q.flags.join("; ") + ".";
   } else {
     $("dicequal").className = "hint";
@@ -4275,7 +4275,7 @@ async function diceGenerate(acknowledged) {
     $("diceweak").innerHTML = "⚠︎ <b>These rolls do not look like dice.</b> "
       + (q.flags.length
           ? (f => f.charAt(0).toUpperCase() + f.slice(1))(q.flags.join("; ")) + ". " : "")
-      + "Hashing them will still produce a seed that looks perfectly random — that is exactly "
+      + "Hashing them will still produce a seed that looks perfectly random, and that is exactly "
       + "the danger, because nothing further down this page can tell the difference. A guesser "
       + `who noticed would need about <b>${Math.round(q.bits)}</b> yes-or-no answers instead of `
       + `${Math.round(q.ceiling)}, and every one lost halves the work they face. Roll again with `
@@ -4294,7 +4294,7 @@ async function diceGenerate(acknowledged) {
   if (diceMadeCount) {
     $("diceagain").style.display = "block";
     $("diceagain").innerHTML = "⚠︎ <b>This is a different seed, not a longer version of the "
-      + "last one.</b> A seed from 50 rolls and a seed from 100 rolls share nothing — not one "
+      + "last one.</b> A seed from 50 rolls and a seed from 100 rolls share nothing, not one "
       + "word. If you have already written down a shorter seed, that seed still works and this "
       + "one does not replace it. Decide which one you are keeping, and destroy the note for "
       + "the other.";
@@ -4626,7 +4626,7 @@ $("gen").onclick = async () => {
     $("in").value = randomWords(+$("genlen").value).join(" ");
   } catch (e) {
     $("st").className = "status bad";
-    $("st").textContent = "✕  " + e.message + " — do not use this page to generate a phrase.";
+    $("st").textContent = "✕  " + e.message + ". Do not use this page to generate a phrase.";
     return;
   }
   if (!await calculate()) return;
