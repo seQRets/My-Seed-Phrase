@@ -630,41 +630,33 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
   <div class="warn">
     <details>
       <summary>How to run myseedphrase.app safely, in 6 steps</summary>
-      <p><b>Run this offline for anything real.</b> This page never sends anything anywhere,
-      and it tells your browser to refuse if it ever tried, but that only makes this page
-      safe, not the browser it runs in or the computer underneath it.</p>
+      <p><b>Making a seed phrase in a browser? Really?</b> Fair question. This page never
+      touches the internet: not an image, not a typeface, not a line of code, and it tells your
+      browser to refuse if it ever tried. Open the Network tab in your browser’s developer
+      tools and watch for yourself.</p>
       <p><b>Browser extensions are the risk this page cannot touch.</b> Anything you have added
-      to your browser (a password manager, an ad blocker, a coupon or shopping tool) can read
-      every word you type here and every phrase this page produces. No web page can stop that,
-      including this one. Private and Incognito windows are not a reliable defence either:
-      Chrome and Firefox switch extensions off in them by default, but it is a per-extension
-      setting many people turn back on, and <b>Safari leaves them running in Private
-      Browsing</b>. Use a separate browser profile with nothing added to it.</p>
+      to your browser can read every word you type here and every phrase this page produces. No
+      web page can stop that, including this one. For a seed that will hold money, use a browser
+      profile with nothing installed in it.</p>
       <ol>
         <li><b>Get the file while you are still online.</b>
             <a href="https://github.com/seQRets/My-Seed-Phrase/releases/latest/download/myseedphrase.html"
                target="_blank" rel="noopener noreferrer">Download the latest release</a>: one
-            file, nothing to install, and the only copy whose fingerprint matches the one
-            published beside it on the release page. Your browser's Save Page As works too, but
-            rewrites the file as it saves, so that copy can never match. Compare the two before
-            you open it: this is the one check that catches a tampered copy.</li>
+            file, nothing to install, and the only copy whose SHA-256 matches the checksum
+            published beside it. The
+            <a href="https://github.com/seQRets/My-Seed-Phrase#step-1--download-the-file-while-still-online" target="_blank"
+            rel="noopener noreferrer">README shows how to check it</a>.</li>
         <li>Make a fresh browser profile. Chrome/Edge: profile icon → Add; Firefox:
             <code>about:profiles</code> → Create a New Profile. Install nothing into it,
             sign in to nothing.</li>
         <li>Turn off Wi-Fi and unplug any internet cable.</li>
-        <li>Open a private window in that profile and drag the downloaded file onto it.</li>
-        <li>Check the badge below reads <b>Offline: safe to generate</b>, then press
-            <b>Verify this page</b> and confirm it says <b>15 of 15 checks passed</b>.
-            That makes the page work out answers already published in the BIP-39 standard
-            and take a fingerprint of its own built-in word list. An altered copy gets
-            those wrong. What it cannot do is prove this copy is the one that was
-            published: a tampered copy with an honest word list and honest arithmetic
-            would still pass every check here. That is what step 1’s fingerprint is for.
-            It needs no connection, and it checks the page, not your computer.
+        <li>Open the downloaded file in that profile, check the badge below reads
+            <b>Offline: safe to generate</b>, then press <b>Verify this page</b> and confirm it
+            says <b>15 of 15 checks passed</b>.
             <div class="row"><button id="test">Verify this page</button></div></li>
-        <li>Write the phrase down by hand, never the copy or download buttons. Do not save
-            the page again once a phrase is on screen: that writes what you can see to
-            disk. Then quit the browser completely before reconnecting.</li>
+        <li>Make your seed, then write it down by hand. The copy control and the SeedQR
+            picture both put it somewhere that outlives the tab.</li>
+        <li>Close the browser completely before reconnecting.</li>
       </ol>
     </details>
   </div>
@@ -1083,7 +1075,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.12 · RUNS OFFLINE</div>
+    <div class="r">v1.7.13 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -1098,7 +1090,11 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     </details>
     <div class="flinks">
       <a href="https://github.com/seQRets/My-Seed-Phrase" target="_blank" rel="noopener noreferrer">
-        <span class="g" aria-hidden="true">‹›</span> Source on GitHub</a>
+        <span class="g" aria-hidden="true">‹›</span> GitHub</a>
+      <!-- the same asset step 1 hands over, so the two must never drift apart:
+           verify.js pins this exact href twice, here and in the guide -->
+      <a href="https://github.com/seQRets/My-Seed-Phrase/releases/latest/download/myseedphrase.html" target="_blank" rel="noopener noreferrer">
+        <span class="g" aria-hidden="true">↓</span> Download</a>
       <a href="https://coinos.io/seQRets/receive" target="_blank" rel="noopener noreferrer">
         <span class="g" aria-hidden="true">₿</span> Donate</a>
       <a href="https://mypassphrase.app" target="_blank" rel="noopener noreferrer">

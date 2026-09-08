@@ -588,16 +588,20 @@ async function pageChecks(browser, fileUrl, httpUrl) {
   const outbound = links.filter(l => /^https:/.test(l.href));
   const inpage = links.filter(l => !/^https:/.test(l.href));
   const RELEASES = 'https://github.com/seQRets/My-Seed-Phrase/releases/latest';
-  chk('every outbound link is safe, and step 1 really hands over the file',
-    outbound.length === 4 &&
+  // The footer's Download button and step 1's link are the same asset on
+  // purpose, so both are pinned: if one is edited the other must move with it.
+  const dl = outbound.filter(l => l.href === RELEASES + '/download/myseedphrase.html');
+  chk('every outbound link is safe, and both download links hand over the file',
+    outbound.length === 6 && dl.length === 2 &&
+    // step 1 sends people to the README for the commands that check the hash
+    outbound.some(l => l.href === 'https://github.com/seQRets/My-Seed-Phrase#step-1--download-the-file-while-still-online') &&
     outbound.some(l => l.href === 'https://github.com/seQRets/My-Seed-Phrase') &&
     outbound.some(l => l.href === 'https://coinos.io/seQRets/receive') &&
     outbound.some(l => l.href === 'https://mypassphrase.app/') &&
     // the download must point at the asset itself, not a page to go hunting on
-    outbound.some(l => l.href === RELEASES + '/download/myseedphrase.html') &&
     outbound.every(l => l.target === '_blank' && /noopener/.test(l.rel) && /noreferrer/.test(l.rel) && l.w > 40) &&
     inpage.length === 1 && /#inputcard$/.test(inpage[0].href) && inpage[0].target === '',
-    `${outbound.length} outbound, ${inpage.length} in-page`);
+    `${outbound.length} outbound (${dl.length} download), ${inpage.length} in-page`);
 
   await p.evaluate(`${HELPERS} $('in').value='abandon '.repeat(11).trim(); $('go').click();
     await wait(()=>$('out').style.display==='block'&&document.querySelectorAll('#grid .w').length===128);

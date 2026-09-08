@@ -159,7 +159,7 @@ deliberately not consulted: everyone gets the same page until they say otherwise
 
 ## Running it safely — step by step
 
-For any phrase holding real funds: save the page, disconnect, then open it.
+For any phrase holding real funds: download the file, disconnect, then open it.
 
 The page never sends anything anywhere, and it tells your browser to refuse if
 it ever tried — nothing is fetched from the internet at all, not a typeface, not
@@ -247,16 +247,15 @@ Turn off phone tethering and Bluetooth too, if you use them.
 
 ### Step 4 — Open the file
 
-Open a private window in the extension-free browser — <kbd>Cmd/Ctrl</kbd> +
-<kbd>Shift</kbd> + <kbd>N</kbd> in Chrome, Edge and Safari, <kbd>Cmd/Ctrl</kbd>
-+ <kbd>Shift</kbd> + <kbd>P</kbd> in Firefox — then drag `myseedphrase.html` onto the
-window, or press <kbd>Cmd/Ctrl</kbd> + <kbd>O</kbd> and pick it.
+Drag `myseedphrase.html` onto the extension-free browser, or press
+<kbd>Cmd/Ctrl</kbd> + <kbd>O</kbd> and pick it. A private window on top of a
+clean profile adds nothing; the profile is the control.
 
 ### Step 5 — Let the page confirm your setup
 
 Two checks before you type anything real:
 
-1. The badge near the top should read **"Offline — safe to generate"** in green. If
+1. The badge near the top should read **"Offline: safe to generate"** in green. If
    it still says *Online*, something is still connected — go back to step 3.
 2. Press **Verify this page**. It must say **15 of 15 checks passed**. That
    confirms the calculator gets the right answer on example phrases whose
@@ -268,8 +267,9 @@ Both work with no internet. Everything on the page does.
 
 ### Step 6 — When you are finished
 
-- **Do not use the copy buttons** for a real phrase. Write it down by hand.
-- Close the private window, then **quit the browser completely**
+- **Write the phrase down by hand.** The copy control and the SeedQR picture
+  both put it somewhere that outlives the tab.
+- **Quit the browser completely**
   (<kbd>Cmd</kbd> + <kbd>Q</kbd> on macOS). Closing a tab does not clear memory;
   quitting does.
 - Reconnect only after the browser has fully quit.

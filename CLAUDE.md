@@ -154,7 +154,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    setGenLabels() off CFG, so they cannot drift out of step with it. The Q&A
    refers to them as "the shorter one" / "the longer one" rather than by a
    fixed name, since the names now move.
-   "Verify this page" sits inside step 5 of the six steps, where the
+   "Verify this page" sits inside step 4 of the six steps, where the
    instruction to press it is, with its results card directly under the steps
    rather than below the seed card.
 9b. Never name a particular hardware wallet in user-facing copy, in the README,
@@ -306,7 +306,7 @@ runs on your machine at push time. Read the diff on that file like any other.
   seQRets/Passphrase; the old slug 301s). Reciprocal linking is DONE, verified
   in both files on 8 Sep 2026: this footer links to https://mypassphrase.app and
   that footer links to https://myseedphrase.app. Do not add another — verify.js
-  asserts exactly FOUR outbound links here, so a second one fails the harness.
+  asserts an exact outbound-link count here, so a second one fails the harness.
 - Real-device test DONE (2 Sep 2026): a generated SeedQR was scanned by a
   hardware wallet, imported, and the master fingerprint shown on-device matched
   the one on the page. The end-to-end claim the whole SeedQR feature rests on
@@ -319,7 +319,10 @@ runs on your machine at push time. Read the diff on that file like any other.
   dice a different way, which is why the copy stays conditional. Krux is named
   HERE only — 9b still bars naming a wallet in the page, the README or release
   notes for the dice route.
-- FOUR outbound links, all pinned by verify.js, plus the in-page "Find my last
+- SIX outbound links, all pinned by verify.js: GitHub, Download, Donate,
+  mypassphrase.app, step 1's asset link (the same href as the Download button,
+  pinned twice on purpose) and step 1's link to the README anchor that carries
+  the hash-checking commands. Plus the in-page "Find my last
   word" jump. Footer: Source on GitHub · ₿ Donate (coinos.io/seQRets/receive) ·
   ↗ mypassphrase.app. Step 1: one inline link reading "Download the latest
   release", pointing at releases/latest/download/myseedphrase.html — the asset itself,
