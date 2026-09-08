@@ -65,9 +65,11 @@ bits without either bias or discarding draws. The digits are hashed instead:
 `SHA-256` of the ASCII rolls, which is the common convention for dice entropy.
 The leading bytes become the entropy and the checksum is appended as the
 standard specifies. A wallet that derives entropy from dice the same way will
-reproduce the same seed from the same rolls, and that some hardware wallets can
-import a seed from dice at all is the reason many people want to roll their
-own. Note what hashing does *not* do: it spreads the randomness over 256
+reproduce the same seed from the same rolls; that has been checked end to end on
+a real device, with both the seed and the master fingerprint matching. It stays
+worded conditionally because one device is not a survey and another wallet may
+take dice a different way. That some hardware wallets can import a seed from
+dice at all is the reason many people want to roll their own. Note what hashing does *not* do: it spreads the randomness over 256
 bits without adding any. Fifty rolls carry 129 bits whether hashed or not,
 which is exactly why the longer sizes stay shut until the rolls are there.
 

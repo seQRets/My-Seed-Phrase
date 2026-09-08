@@ -946,8 +946,9 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         from the browser. Your throws decide all of the words, including the last one, which
         also carries the check that makes a wallet accept the phrase.</p>
         <p>The same throws always make the same seed. That is the point of doing it this way:
-        a hardware wallet given those same throws should produce the same words, which lets you
-        check this page rather than believe it. It also means the numbers are exactly as secret
+        a hardware wallet given those same throws produces the same words. That has been
+        checked on a real device, not just worked out on paper, and it lets you check this
+        page rather than believe it. It also means the numbers are exactly as secret
         as the phrase: anyone who has them can work out every word, on any computer, for ever.
         Keep them until the words are written down and checked, then destroy the paper you
         threw onto.</p>
@@ -1082,7 +1083,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.11 · RUNS OFFLINE</div>
+    <div class="r">v1.7.12 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4107,10 +4108,10 @@ $("genfull").onclick = async () => {
 // to bits without either bias or throwing draws away. Hashing the digits
 // sidesteps both, and SHA-256 of the ASCII digits is the common convention, so
 // a wallet that derives dice entropy the same way reproduces the same seed from
-// the same rolls, which is the whole point of rolling them by hand. Do not name
-// a particular wallet here, in the README or in release notes: this is a claim
-// about a convention, and it has not been confirmed against hardware the way
-// the SeedQR one was. Note what hashing does NOT do: it spreads the
+// the same rolls, which is the whole point of rolling them by hand. Confirmed
+// against real hardware on 8 Sep 2026, the way the SeedQR claim was. Still do
+// not name a particular wallet here, in the README or in release notes: that
+// reads as an endorsement, and one device is not a survey. Note what hashing does NOT do: it spreads the
 // randomness over 256 bits without adding any. Fifty rolls carry 129 bits
 // whether they are hashed or not, which is why the longer sizes stay shut
 // until the rolls are actually there.
