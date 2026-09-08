@@ -6,27 +6,32 @@ GitHub Pages (main, /root). Copyright Toothjockey LLC, MIT.
 
 ## What this is
 
-A BIP-39 tool whose routes all share ONE seed field (the textarea in the "Your
-seed" card). A "Two ways to make a seed" chooser sits ABOVE that box, right
-under the safety guide, holding two collapsed <details> that behave as an
-accordion — opening one closes the other, because they are a choice, not a
-checklist. Path 1 "Let the app make it" (button: Generate) holds both
-app-driven jobs: generate a complete or partial seed, and find the checksum
-words for a phrase you already have. Path 2 "Roll your own randomness"
-(button: Roll) is the dice flow. Clear and Verify this page stay with the box,
-since they act on it rather than on either route. The buttons in the summaries
-are SPANS styled as buttons, never <button>: a button inside a summary nests
-one interactive control in another and the summary is already the click target.
+A BIP-39 tool with THREE independent panels, each doing one job and each owning
+its own seed field. There is deliberately no shared box: a seed made in one
+panel never appears in another. Under the safety guide sits "What do you want to
+do?" and three collapsed <details> behaving as an accordion, since they are a
+choice rather than a checklist. In order:
 
-Path 1: generate a complete seed in one press, or supply 11/14/17/20/23 words
-and it returns every valid final word — choosing an ending (chip click or "Pick at
-random", top-right of the endings card) completes the seed in the top box.
-Any complete-length phrase gets a live verdict: green border when the checksum
-verifies, red with a plain-words reason when it does not. Complete seeds show a
-BIP-32 master fingerprint (in-box and under the QR) and export as a standard
-SeedQR (numeric mode) in a blurred modal, which can also save a ~2000px PNG.
-Seeds you typed yourself get the same eye, copy and QR controls. An entropy
-read-out ("How hard these words are to guess") flags hand-picked words.
+  1 "Make a new seed"  (tab: Create)  #makepath  — length select + Generate,
+    result in #gseed. Draws entropy whole (crypto.getRandomValues -> makeSeed ->
+    entropyToWords), so it touches none of panel 3's machinery and shows no
+    endings: someone who pressed Generate wanted a seed, not a lesson.
+  2 "Roll your own randomness" (tab: Roll) #dicepath — the dice flow, result in
+    #dseed.
+  3 "Finish a seed you already have" (tab: Finish) #finishpath — the older
+    machinery: #in takes words IN as well as putting them out, with the verdict,
+    the endings grid (#out, inside the panel) and the strength meter.
+
+Panels 1 and 2 share resultField(prefix), a small component giving each field
+its own blur/eye, copy, QR and fingerprint. Their textareas are readonly: they
+only ever show a seed, so there is no hand-editing one. Panel 3 keeps its own
+older code because its field does a different job.
+
+INVARIANT 7 NOW GOVERNS THREE FIELDS. scrubDerived() is the load-time scrub and
+reaches all three; each panel's own Clear (#gclr, #diceclr, #clr -> scrubFinish)
+must reach ONLY its own panel. Wiring a panel's Clear to scrubDerived() empties
+the other two, which is exactly the bug this layout exists to avoid; verify.js
+asserts it.
 
 Path 2 (dice): choose a target size, type rolls, and the ladder unlocks as the
 rolls arrive — 50/62/75/87/100 rolls for 12/15/18/21/24 words, being
@@ -43,7 +48,7 @@ hashed — see invariant 13.
 
 ## Architecture
 
-index.html is the entire site (~195 KB): wordlist, CSS, JS, an embedded
+index.html is the entire site (~205 KB): wordlist, CSS, JS, an embedded
 kazuhikoarase/qrcode-generator (MIT, verbatim), and in-file secp256k1 +
 RIPEMD-160 (see invariants). No build, no dependencies, no backend.
 verify.js (repo root) is the external test harness — single file, no deps.
@@ -91,7 +96,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.11.
+   shasum block. Current release: v1.8.0.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -157,6 +162,11 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    "Verify this page" sits inside step 4 of the six steps, where the
    instruction to press it is, with its results card directly under the steps
    rather than below the seed card.
+9a. Scrolling: each panel keeps its field directly under its own buttons, so
+    pressing one needs no scrolling at all and the page must NOT move. The one
+    exception is panel 3's endings, which appear below its field: asking for them
+    scrolls to them (revealResults anchors on #out). Opening a panel must move
+    nothing either. verify.js asserts all three.
 9b. Never name a particular hardware wallet in user-facing copy, in the README,
     or in release notes for the dice route. The only permitted framing is that
     support for dice entropy in wallets is an incentive for many people to roll
@@ -248,7 +258,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 66 checks: drives real Chrome headless, checks
+    node verify.js            # 69 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,
@@ -322,16 +332,15 @@ runs on your machine at push time. Read the diff on that file like any other.
 - SIX outbound links, all pinned by verify.js: GitHub, Download, Donate,
   mypassphrase.app, step 1's asset link (the same href as the Download button,
   pinned twice on purpose) and step 1's link to the README anchor that carries
-  the hash-checking commands. Plus the in-page "Find my last
-  word" jump. Footer: Source on GitHub · ₿ Donate (coinos.io/seQRets/receive) ·
-  ↗ mypassphrase.app. Step 1: one inline link reading "Download the latest
-  release", pointing at releases/latest/download/myseedphrase.html — the asset itself,
-  never a page to go hunting on. The /latest/ alias never goes stale as you
-  release. Match the sister app mypassphrase.app here: an inline link inside the
-  sentence, not a button, and ONE link — the sentence says the fingerprint is
-  published beside the file, which is why a second link is not needed. That link
-  sits inside the collapsed six steps, so it measures zero wide until the
-  disclosure is opened — the check opens it before measuring.
+  the hash-checking commands. NO in-page links: the "Find my last word" jump
+  went in v1.7.15, because the seed box it pointed down at is now the first
+  thing under the guide. verify.js asserts inpage.length === 0.
+  Footer row, in order: GitHub, Download, Donate (coinos.io/seQRets/receive),
+  mypassphrase.app. The Download button and step 1's inline "Download the latest
+  release" are the SAME href (releases/latest/download/myseedphrase.html, the
+  asset itself, never the releases page), and verify.js requires that href
+  exactly twice so the two cannot drift apart. Renaming the asset means changing
+  both, the README, and the pin.
 - URL.revokeObjectURL fires immediately after the download click. That favours
   the secret's lifetime over an old Safari quirk that can produce an empty
   file. Deliberate; revisit only if a real empty-download report arrives.

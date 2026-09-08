@@ -32,6 +32,10 @@ const PAGE = path.join(ROOT, 'index.html');
 const SNAP_WORD = 'midnight';
 const SNAP_NOTE = `“${SNAP_WORD}” is word 12 — the completed seed is in the box at the top.`;
 const SNAP_FP = '45618c53';
+// panels 1 and 2 each show a fingerprint of their own, so each needs its own
+// sentinel: one value would not tell you WHICH field failed to scrub
+const SNAP_FP_MADE = '7c1d90ab';
+const SNAP_FP_ROLL = '3ef05a64';
 // The dice read-out is worked out from the rolls, so it is derived state and
 // scrubs with the rest. The rolls themselves never reach a saved file — a
 // textarea's value is not part of the document — but what they produced does.
@@ -215,7 +219,8 @@ function sourceChecks() {
   // a sentinel that appears in the source matches the script tag, not the DOM
   chk('the snapshot sentinels cannot match the page\'s own source',
     !SRC.includes(SNAP_ROLLQ) && !SRC.includes(SNAP_NOTE) && !SRC.includes(SNAP_FP)
-    && !SRC.includes(SNAP_CHIP),
+    && !SRC.includes(SNAP_CHIP) && !SRC.includes(SNAP_FP_MADE)
+    && !SRC.includes(SNAP_FP_ROLL),
     'a planted value also occurs in index.html, so its scrub check proves nothing');
   chk('no Math.random() anywhere', (SRC.match(/Math\.random\s*\(/g) || []).length === 0);
   const csp = (SRC.match(/http-equiv="Content-Security-Policy"[\s\S]*?content="([^"]+)"/) || [])[1] || '';
@@ -299,27 +304,31 @@ async function pageChecks(browser, fileUrl, httpUrl) {
   chk('abandon x23 gives the published answer',
     c.a23 === brute(Array(23).fill('abandon')).join(' '), c.a23);
 
+  // Panel 3's whole flow, at every prefix length: words in, endings out, then
+  // let the page pick one. The prefixes come from Node, so the page is being
+  // handed words it did not choose.
   const EXPECT = { 11: 128, 14: 64, 17: 32, 20: 16, 23: 8 };
+  const PREFIXES = Object.keys(EXPECT).map(Number).map(n =>
+    Array.from({ length: n }, () => WORDS[crypto.randomInt(2048)]).join(' '));
   const gen = await p.evaluate(`${HELPERS}
-    const out=[];
-    for (const o of $('genlen').options) {
-      const want=${JSON.stringify(EXPECT)}[o.value];
-      for (let k=0;k<6;k++){
-        $('clr').click(); await wait(()=>$('out').style.display==='none');
-        $('genlen').value=o.value; $('gen').click();
-        if(!await wait(()=>$('out').style.display==='block'
-          && document.querySelectorAll('#grid .w').length===want
-          && $('st').textContent.startsWith('✓'))) return {err:'timed out at '+o.value+' words'};
-        const input=$('in').value.trim();
-        $('rand').click();
-        if(!await wait(()=>$('in').value.trim().split(/\\s+/).length===+o.value+1)) return {err:'pick at random timed out'};
-        const full=$('in').value.trim().replace(/\\s+/g,' ');
-        if(!full.startsWith(input+' ')) return {err:'completed seed does not start with the words supplied'};
-        out.push(full);
-      }
+    const want=${JSON.stringify(EXPECT)}, out=[];
+    $('finishpath').open = true;
+    for (const pre of ${JSON.stringify(PREFIXES)}) {
+      const n = pre.split(' ').length;
+      $('clr').click(); await wait(()=>$('out').style.display==='none');
+      $('in').value = pre; $('go').click();
+      if(!await wait(()=>$('out').style.display==='block'
+        && document.querySelectorAll('#grid .w').length===want[n]
+        && $('st').textContent.startsWith('✓'))) return {err:'timed out at '+n+' words'};
+      $('rand').click();
+      if(!await wait(()=>$('in').value.trim().split(/\\s+/).length===n+1))
+        return {err:'pick at random timed out at '+n};
+      const full=$('in').value.trim().replace(/\\s+/g,' ');
+      if(!full.startsWith(pre+' ')) return {err:'completed seed does not start with the words supplied'};
+      out.push(full);
     } return {out};`);
-  chk('generate, calculate and pick work at all five lengths', !gen.err, gen.err || '');
-  // the manual flow's assembled-phrase controls: visible on arrival, the eye
+  chk('panel 3: words in, the right number of endings out, and a pick completes them',
+      !gen.err, gen.err || '');
   // hides the whole line including the highlighted last word, copy warns
   const manual = await p.evaluate(`${HELPERS}
     $('clr').click(); await wait(()=>$('out').style.display==='none');
@@ -340,31 +349,19 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     $('incopy').click(); r.warnAfterCopy = /clipboard/i.test($('inhint').textContent);
     r.noLowerBox = !document.getElementById('full');
     return r;`);
-  chk('typed words complete into the one box, visible, with QR and note below',
+  chk('panel 3: typed words stay visible, complete in place, with QR and note',
     !manual.err && manual.ctl && manual.typedStaysVisible && manual.qrAvailable
       && manual.noteBelow && manual.warnNotYet && manual.hides && manual.staysHidden
       && manual.showsAgain && manual.warnAfterCopy && manual.noLowerBox,
     manual.err || JSON.stringify(manual));
-  // partial generation is born hidden, like everything the generator makes
-  const partial = await p.evaluate(`${HELPERS}
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
-    $('genlen').value='11'; $('gen').click();
-    if(!await wait(()=>$('out').style.display==='block'
-      && document.querySelectorAll('#grid .w').length===128)) return {err:'partial timeout'};
-    return { blurred: $('in').classList.contains('shield'),
-             ctl: $('inctl').style.display!=='none',
-             qrHidden: $('inqr').style.display==='none',
-             guided: /choose the ending/i.test($('inhint').textContent) };`);
-  chk('a generated partial seed arrives blurred, QR withheld until complete',
-    !partial.err && partial.blurred && partial.ctl && partial.qrHidden && partial.guided,
-    partial.err || JSON.stringify(partial));
   // typing never lifts a blur already engaged: a hidden box edited by hand
   // stays hidden, so a passer-by cannot read what is being entered
   const shieldTyping = await p.evaluate(`${HELPERS}
+    $('finishpath').open = true;
     $('clr').click(); await wait(()=>$('out').style.display==='none');
     const r={};
-    // typed into a fresh box: visible, then the eye hides it, then further
-    // typing must keep it hidden
+    // panel 3 takes words in, so its field is born visible; the eye hides it and
+    // further typing must not lift that
     $('in').value='abandon ability'; $('in').dispatchEvent(new Event('input'));
     r.bornVisible = !$('in').classList.contains('shield');
     $('peek').click();
@@ -372,23 +369,25 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     $('in').value='abandon ability able'; $('in').dispatchEvent(new Event('input'));
     r.typingStaysHidden = $('in').classList.contains('shield')
       && $('inctl').style.display!=='none';
-    // a generated seed is born hidden; hand-editing it must not reveal it
-    $('clr').click();
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    $('in').value = $('in').value + ' abandon';
-    $('in').dispatchEvent(new Event('input'));
-    r.editKeepsGeneratedHidden = $('in').classList.contains('shield');
     // and once revealed, typing does not re-hide it
     $('peek').click();
-    $('in').value = $('in').value + ' abandon'; $('in').dispatchEvent(new Event('input'));
+    $('in').value='abandon ability able about'; $('in').dispatchEvent(new Event('input'));
     r.visibleStaysVisible = !$('in').classList.contains('shield');
     $('clr').click();
+    // panels 1 and 3 only ever show a seed, so their fields are readonly: there
+    // is no hand-editing a generated seed to reveal it, the case that used to
+    // need guarding
+    $('makepath').open = true;
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    r.madeBornHidden = $('gseed').classList.contains('shield');
+    r.madeReadonly = $('gseed').readOnly && $('dseed').readOnly;
+    $('gpeek').click(); r.madeEyeWorks = !$('gseed').classList.contains('shield');
+    $('gclr').click();
     return r;`);
-  chk('typing never lifts an engaged blur, nor re-hides a revealed box',
-    !shieldTyping.err && shieldTyping.bornVisible && shieldTyping.hides
-      && shieldTyping.typingStaysHidden && shieldTyping.editKeepsGeneratedHidden
-      && shieldTyping.visibleStaysVisible,
+  chk('typing never lifts an engaged blur, and made seeds cannot be typed into',
+      !shieldTyping.err && shieldTyping.bornVisible && shieldTyping.hides && shieldTyping.typingStaysHidden
+        && shieldTyping.visibleStaysVisible && shieldTyping.madeBornHidden && shieldTyping.madeReadonly && shieldTyping.madeEyeWorks,
     shieldTyping.err || JSON.stringify(shieldTyping));
   if (gen.out) {
     const bad = gen.out.filter(x => !validate(x));
@@ -396,41 +395,42 @@ async function pageChecks(browser, fileUrl, httpUrl) {
       bad.length === 0, bad.slice(0, 2).join(' | '));
   }
 
-  // the one-press button, driven exactly as a user would press it. The seed
-  // lands in the input box, blurred, with the eye and copy controls beside it.
+  // Panel 1, driven exactly as a user would: pick a length, press Generate. The
+  // seed lands in THAT panel's own field, blurred, with its own eye, copy and QR
+  // beside it, and none of panel 3's endings furniture anywhere.
   const one = await p.evaluate(`${HELPERS}
     const out=[];
+    $('makepath').open = true;
     for (const o of $('genlen').options) {
-      $('clr').click(); await wait(()=>$('out').style.display==='none');
+      $('gclr').click();
       $('genlen').value=o.value; $('genfull').click();
-      if(!await wait(()=>document.querySelectorAll('#grid .w.sel').length===1
-        && $('in').classList.contains('shield')
-        && $('inctl').style.display!=='none')) return {err:'timed out at '+o.value};
-      const rec={ phrase: $('in').value.trim(),
-                  blurred: $('in').classList.contains('shield'),
-                  note: $('inhint').textContent };
-      // the eye reveals, and reveals only when pressed
-      $('peek').click(); rec.unblurs = !$('in').classList.contains('shield');
-      $('peek').click(); rec.reblurs = $('in').classList.contains('shield');
-      // choosing a different ending updates the box, not the block below
-      const other=[...document.querySelectorAll('#grid .w')].find(w=>!w.classList.contains('sel'));
-      other.click(); rec.rechoose = $('in').value.trim();
-      // copying surfaces the clipboard warning
-      $('incopy').click(); rec.copyWarn = /clipboard/i.test($('inhint').textContent);
+      if(!await wait(()=>$('gseed').classList.contains('shield')
+        && $('gctl').style.display!=='none')) return {err:'timed out at '+o.value};
+      await wait(()=>$('gfpv').textContent !== '\u2026');
+      const rec={ want: +o.value, phrase: $('gseed').value.trim(),
+                  blurred: $('gseed').classList.contains('shield'),
+                  fp: $('gfpv').textContent, note: $('ghint').textContent,
+                  endings: $('out').style.display,
+                  chips: document.querySelectorAll('#grid .w').length };
+      $('gpeek').click(); rec.unblurs = !$('gseed').classList.contains('shield');
+      $('gpeek').click(); rec.reblurs = $('gseed').classList.contains('shield');
+      $('gcopy').click(); rec.copyWarn = /clipboard/i.test($('ghint').textContent);
       out.push(rec);
     } return {out};`);
-  chk('"Generate complete seed" puts a blurred seed in the box at all 5 lengths', !one.err, one.err || '');
+  chk('panel 1 puts a blurred seed in its own field at all five lengths', !one.err, one.err || '');
   if (one.out) {
-    chk('all one-press seeds are valid BIP-39 (checked independently)',
+    chk('every seed panel 1 makes is valid BIP-39 (checked independently)',
       one.out.every(x => validate(x.phrase)),
       one.out.filter(x => !validate(x.phrase)).map(x => x.phrase).slice(0, 1).join(''));
-    chk('re-choosing an ending updates the box and stays valid',
-      one.out.every(x => validate(x.rechoose) && x.rechoose !== x.phrase),
-      one.out.filter(x => !validate(x.rechoose)).map(x => x.rechoose).slice(0, 1).join(''));
-    const oneBad = one.out.find(x => !x.blurred || !x.unblurs || !x.reblurs
-      || !/came from your browser/.test(x.note) || !x.copyWarn);
-    chk('blur, eye toggle and copy warning on the one-press seed',
-      !oneBad, oneBad ? JSON.stringify(oneBad).slice(0, 140) : '');
+    chk('the length you choose is the length you get',
+      one.out.every(x => x.phrase.split(/[ ]+/).length === x.want),
+      JSON.stringify(one.out.map(x => [x.want, x.phrase.split(/[ ]+/).length])));
+    chk('panel 1 shows a fingerprint and leaves no endings furniture',
+      one.out.every(x => /^[0-9a-f]{8}$/.test(x.fp) && x.endings === 'none' && x.chips === 0),
+      JSON.stringify(one.out.map(x => ({fp:x.fp, endings:x.endings, chips:x.chips}))));
+    chk('blur, eye toggle and copy warning on a panel 1 seed',
+      one.out.every(x => x.blurred && x.unblurs && x.reblurs && x.copyWarn),
+      JSON.stringify(one.out[0]));
   }
 
   // ---------- SeedQR ----------
@@ -442,11 +442,13 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     const out = {};
     out.digitsKnown = seedqrDigits([...Array(11).fill('abandon'),'about']);
     out.digitsZoo = seedqrDigits([...Array(23).fill('zoo'),'vote']);
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    out.seed12 = $('in').value.trim();
-    $('inqr').click();
+    // one shared modal, opened from whichever panel holds the seed
+    $('makepath').open = true;
+    $('gclr').click();
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    out.seed12 = $('gseed').value.trim();
+    $('gqr').click();
     // Opening is async (it re-checks the checksum first), so for a moment
     // after the click the canvas is still the 1px wipe from the last close.
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'12-word QR never drew'};
@@ -457,24 +459,27 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     $('qrclose').click();
     out.closed = $('qrveil').style.display==='none';
     out.wiped = $('qrcanvas').width===1;
-    $('inqr').click();
+    $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never redrew'};
     out.reblurs = $('qrbox').classList.contains('shield');
     dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));
     out.escCloses = $('qrveil').style.display==='none';
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
-    $('genlen').value='23'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull 23 timeout'};
-    $('inqr').click();
+    $('gclr').click();
+    $('genlen').value='24'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 24 timeout'};
+    $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'24-word QR never drew'};
     out.canvas24 = $('qrcanvas').width; $('qrclose').click();
+    // and from panel 3, where the seed is finished by choosing an ending
+    $('gclr').click();
+    $('finishpath').open = true;
     $('clr').click(); await wait(()=>$('out').style.display==='none');
     $('in').value='abandon '.repeat(11).trim(); $('go').click();
     await wait(()=>document.querySelectorAll('#grid .w').length===128);
     document.querySelector('#grid .w').click();
     await wait(()=>$('inqr').style.display!=='none');
     $('inqr').click();
-    if(!await wait(()=>$('qrcanvas').width>1)) return {err:'manual QR never drew'};
+    if(!await wait(()=>$('qrcanvas').width>1)) return {err:'panel 3 QR never drew'};
     out.manualOpen = $('qrveil').style.display!=='none';
     out.manualBlur = $('qrbox').classList.contains('shield');
     $('qrclose').click();
@@ -508,72 +513,114 @@ async function pageChecks(browser, fileUrl, httpUrl) {
   const fpr = await p.evaluate(`${HELPERS}
     const out = {};
     out.anchor = await masterFingerprint([...Array(11).fill('abandon'),'about']);
-    // the fingerprint shown for a real generated seed
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    out.seed = $('in').value.trim();
-    // the in-box line, no modal needed
-    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('infpv').textContent), 8000)) return {err:'box fingerprint never shown'};
-    out.boxFp = $('infpv').textContent;
-    // re-choosing the ending must change the phrase and refresh the fingerprint
-    const other=[...document.querySelectorAll('#grid .w')].find(w=>!w.classList.contains('sel'));
-    other.click();
-    out.seed2 = $('in').value.trim();
-    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('infpv').textContent)
-        && $('infpv').textContent!==out.boxFp, 8000)) return {err:'box fingerprint did not refresh'};
-    out.boxFp2 = $('infpv').textContent;
-    $('inqr').click();
+    // panel 1: the fingerprint for a seed the page just made
+    $('makepath').open = true;
+    $('gclr').click();
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    out.seed = $('gseed').value.trim();
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('gfpv').textContent), 8000))
+      return {err:'panel 1 fingerprint never shown'};
+    out.madeFp = $('gfpv').textContent;
+    // the modal agrees with the line in the field
+    $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never drew'};
-    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('qrfp').textContent), 8000)) return {err:'fingerprint never shown'};
-    out.shown = $('qrfp').textContent;
-    out.modalAgrees = out.shown === out.boxFp2;
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('qrfp').textContent), 8000))
+      return {err:'modal fingerprint never shown'};
+    out.modalAgrees = $('qrfp').textContent === out.madeFp;
     out.unblurred = !$('qrfp').closest('.qrbox');
     $('qrclose').click();
     out.cleared = $('qrfp').textContent==='…';
-    // the reserved right padding must cover the control strip in both boxes,
+    // panel 3: choosing a different ending changes the phrase and refreshes its
+    // own fingerprint, and hand-editing dismisses the line with the rest
+    $('finishpath').open = true;
+    $('clr').click(); await wait(()=>$('out').style.display==='none');
+    $('in').value='abandon '.repeat(11).trim(); $('go').click();
+    await wait(()=>document.querySelectorAll('#grid .w').length===128);
+    document.querySelector('#grid .w').click();
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('infpv').textContent), 8000))
+      return {err:'panel 3 fingerprint never shown'};
+    out.seed2 = $('in').value.trim(); out.boxFp = $('infpv').textContent;
+    const other=[...document.querySelectorAll('#grid .w')].find(w=>!w.classList.contains('sel'));
+    other.click();
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('infpv').textContent)
+        && $('infpv').textContent!==out.boxFp, 8000)) return {err:'fingerprint did not refresh'};
+    out.seed3 = $('in').value.trim(); out.boxFp2 = $('infpv').textContent;
+    $('in').dispatchEvent(new Event('input'));
+    out.goneOnEdit = $('infp').style.display==='none';
+    // the reserved right padding must cover the control strip in every field,
     // or a long first line runs underneath the icons
     const covers = (area, ctl) => {
       const a=area.getBoundingClientRect(), c=ctl.getBoundingClientRect();
       return parseFloat(getComputedStyle(area).paddingRight) >= (a.right - c.left) - 1;
     };
-    out.padOk = covers($('in'), $('inctl'));
-    out.padWhy = 'input covered: '+out.padOk;
-    // editing by hand dismisses the line with the rest of the generated state
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull re-run timeout'};
-    $('in').dispatchEvent(new Event('input'));
-    out.goneOnEdit = $('infp').style.display==='none';
+    out.padOk = covers($('in'), $('inctl')) && covers($('gseed'), $('gctl'));
+    out.padWhy = 'panel 3 '+covers($('in'),$('inctl'))+', panel 1 '+covers($('gseed'),$('gctl'));
     return out;`);
   chk('master fingerprint anchor is 73c5da0a and Node agrees', !fpr.err
       && fpr.anchor === '73c5da0a' && nodeFp('abandon '.repeat(11) + 'about') === '73c5da0a',
     fpr.err || fpr.anchor);
   chk('fingerprint shown for a generated seed matches Node independently',
-      !fpr.err && fpr.boxFp === nodeFp(fpr.seed),
-      fpr.err || `page ${fpr.boxFp}, node ${!fpr.err && nodeFp(fpr.seed)}`);
+      !fpr.err && fpr.madeFp === nodeFp(fpr.seed),
+      fpr.err || `page ${fpr.madeFp}, node ${!fpr.err && nodeFp(fpr.seed)}`);
   chk('text cannot run under the control icons', !fpr.err && fpr.padOk, fpr.err || fpr.padWhy);
+  // Every panel now keeps its field directly under its own buttons, so pressing
+  // one should need no scrolling at all: the result appears where the reader is
+  // already looking. What used to need asserting (bring a distant box back into
+  // view) is gone; what needs asserting now is that the page does NOT lurch.
   const creep = await p.evaluate(`${HELPERS}
-    $('clr').click(); await wait(()=>$('out').style.display==='none');
     const settle = async () => { let y=-1;
       for(let i=0;i<40;i++){ await new Promise(r=>setTimeout(r,100));
         if(Math.abs(scrollY-y)<1) return scrollY; y=scrollY; } return scrollY; };
-    const ys=[];
-    for (const start of [0, 400]) {
-      scrollTo(0, start); await new Promise(r=>setTimeout(r,100));
-      for (let i=0;i<2;i++){
-        $('genlen').value='11'; $('genfull').click();
-        if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'timeout'};
-        ys.push({ start, ended: await settle() });
+    const seen = el => { const r=$(el).getBoundingClientRect();
+      return r.top < innerHeight && r.bottom > 0 };
+    const out=[];
+    for (const [panel, btn, field, clr] of
+         [['makepath','genfull','gseed','gclr'], ['dicepath','dicego','dseed','diceclr']]) {
+      $(panel).open = true;
+      $(clr).click();
+      if (panel === 'dicepath') {
+        $('rolls').value = ${JSON.stringify(ROLLS51)};
+        $('rolls').dispatchEvent(new Event('input'));
+        if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
       }
+      $(btn).scrollIntoView({ block:'center' });
+      await new Promise(r=>setTimeout(r,250));
+      const before = await settle();
+      $(btn).click();
+      if(!await wait(()=>$(field).classList.contains('shield'))) return {err:panel+' timeout'};
+      const after = await settle();
+      out.push({ panel, seen: seen(field), moved: Math.abs(after-before) });
     }
-    return {ys};`);
-  chk('generating never scrolls the page, from the top or mid-page',
-      !creep.err && creep.ys.every(y => Math.abs(y.ended - y.start) < 3),
-      creep.err || JSON.stringify(creep.ys));
+    return {out};`);
+  chk('a panel fills its own field without the page lurching',
+      !creep.err && creep.out.every(r => r.seen && r.moved < 3),
+      creep.err || JSON.stringify(creep.out));
+
+  // Panel 3's endings appear below its field, inside the same panel. Asking for
+  // them must scroll to them, not throw the reader elsewhere on the page.
+  const list = await p.evaluate(`${HELPERS}
+    const settle = async () => { let y=-1;
+      for(let i=0;i<40;i++){ await new Promise(r=>setTimeout(r,100));
+        if(Math.abs(scrollY-y)<1) return scrollY; y=scrollY; } return scrollY; };
+    $('finishpath').open = true;
+    $('clr').click(); await wait(()=>$('out').style.display==='none');
+    $('in').value = 'abandon '.repeat(11).trim();
+    $('go').scrollIntoView({ block:'center' });
+    await new Promise(r=>setTimeout(r,250));
+    const before = await settle();
+    $('go').click();
+    if(!await wait(()=>$('out').style.display==='block')) return {err:'no endings'};
+    const after = await settle();
+    const r = $('out').getBoundingClientRect();
+    return { before: Math.round(before), after: Math.round(after),
+             toTop: after < 50, endingsSeen: r.top < innerHeight && r.bottom > 0 };`);
+  chk('asking for endings scrolls to them, never back to the top of the page',
+      !list.err && !list.toTop && list.endingsSeen,
+      list.err || JSON.stringify(list));
   chk('in-box fingerprint refreshes on re-choosing and the modal agrees',
-      !fpr.err && fpr.boxFp2 === nodeFp(fpr.seed2) && fpr.modalAgrees && fpr.goneOnEdit,
-      fpr.err || `box ${fpr.boxFp2}, node ${!fpr.err && nodeFp(fpr.seed2)}, modal agrees ${fpr.modalAgrees}`);
+      !fpr.err && fpr.boxFp2 === nodeFp(fpr.seed3) && fpr.modalAgrees && fpr.goneOnEdit,
+      fpr.err || `box ${fpr.boxFp2}, node ${!fpr.err && nodeFp(fpr.seed3)}, modal agrees ${fpr.modalAgrees}`);
   chk('fingerprint sits outside the blur and clears on close',
       !fpr.err && fpr.unblurred && fpr.cleared, fpr.err || JSON.stringify(fpr).slice(0, 100));
 
@@ -600,7 +647,10 @@ async function pageChecks(browser, fileUrl, httpUrl) {
     outbound.some(l => l.href === 'https://mypassphrase.app/') &&
     // the download must point at the asset itself, not a page to go hunting on
     outbound.every(l => l.target === '_blank' && /noopener/.test(l.rel) && /noreferrer/.test(l.rel) && l.w > 40) &&
-    inpage.length === 1 && /#inputcard$/.test(inpage[0].href) && inpage[0].target === '',
+    // The jump link went with v1.7.15: it pointed down at a seed box that is now
+    // the first thing under the guide, so it scrolled almost nowhere. Nothing
+    // in-page should link anywhere any more.
+    inpage.length === 0,
     `${outbound.length} outbound (${dl.length} download), ${inpage.length} in-page`);
 
   await p.evaluate(`${HELPERS} $('in').value='abandon '.repeat(11).trim(); $('go').click();
@@ -660,26 +710,30 @@ async function guardChecks(browser, base) {
       !r.framed && r.mainShown && r.warnHidden, JSON.stringify(r));
 
   // Opening a path unfolds a tall body. Without a scroll the buttons stay put
-  // and the box they fill drops below the fold, so the two halves of the job
-  // end up in different screenfuls.
+  // Opening a panel must not move the page: each panel's controls and its own
+  // field are together inside it, so an unfolding body grows downwards and moves
+  // nothing the reader was looking at. The accordion also has to fold the other
+  // two away, or an open panel gets jostled by a sibling's controls.
   await p.setViewport(1280, 1000);
   r = await p.evaluate(`${HELPERS}
+    const own = {makepath:'gseed', dicepath:'dseed', finishpath:'in'};
     const out=[];
-    for (const el of [...document.querySelectorAll('#paths .path')]) {
+    for (const el of [...document.querySelectorAll('#routes .path')]) {
       scrollTo(0,0);
       await new Promise(z=>setTimeout(z,400));
       const before=Math.round(scrollY);
       el.querySelector('summary').click();
       await new Promise(z=>setTimeout(z,1200));
-      const box=$('in').getBoundingClientRect();
-      out.push({moved:Math.round(scrollY)>before,
-        top:Math.round(el.getBoundingClientRect().top),
-        boxInView: box.top<innerHeight && box.bottom>0});
+      out.push({ id: el.id,
+        moved: Math.round(scrollY)!==before,
+        ownFieldInside: el.contains($(own[el.id])),
+        othersFolded: [...document.querySelectorAll('#routes .path')]
+          .filter(o => o!==el).every(o => !o.open) });
     }
     return out;`);
-  chk('opening a path scrolls it to the top, with the seed box in view',
-      Array.isArray(r) && r.length === 2
-      && r.every(x => x.moved && x.top >= 0 && x.top <= 60 && x.boxInView),
+  chk('opening a panel moves nothing, folds the others, and brings its own field',
+      Array.isArray(r) && r.length === 3
+      && r.every(x => !x.moved && x.ownFieldInside && x.othersFolded),
       JSON.stringify(r));
   await p.setViewport(1280, 900);
 
@@ -730,18 +784,20 @@ async function guardChecks(browser, base) {
     d.head.appendChild(st);
     const cssDefeated=getComputedStyle(d.querySelector('main')).display!=='none';
     // neither generator may put anything in the box
-    d.getElementById('genlen').value='11';
+    // no panel may put anything in its own field
+    d.getElementById('genlen').value='12';
     d.getElementById('genfull').click();
-    d.getElementById('gen').click();
+    d.getElementById('dicego').click();
     await new Promise(z=>setTimeout(z,500));
-    const boxAfterGenerate=d.getElementById('in').value;
+    const madeAfter=d.getElementById('gseed').value;
+    const diceAfter=d.getElementById('dseed').value;
     // nor may words typed by hand produce any endings
     d.getElementById('in').value='abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon';
     d.getElementById('go').click();
     d.getElementById('rand').click();
     await new Promise(z=>setTimeout(z,700));
     return {cssDefeated, stillFramed:d.documentElement.hasAttribute('data-framed'),
-      boxAfterGenerate,
+      boxAfterGenerate: madeAfter + diceAfter,
       wordsAfterCalculate:d.getElementById('in').value.split(/[ ]+/).filter(Boolean).length,
       chips:d.querySelectorAll('#grid .w').length,
       qrOpen:d.getElementById('qrveil').style.display==='flex'};`);
@@ -751,23 +807,39 @@ async function guardChecks(browser, base) {
       JSON.stringify(r));
 
   await p.goto(base + '/index.html');
+  // Three fields now, so coming back has to re-blur all of them. A seed made in
+  // panel 1 and one rolled in panel 2 can both be on screen at once.
   r = await p.evaluate(`${HELPERS}
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    $('peek').click();
-    const revealed=!$('in').classList.contains('shield'), seed=$('in').value;
-    $('inqr').click();
+    $('makepath').open = true;
+    $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    $('dicepath').open = true;
+    $('rolls').value = ${JSON.stringify(ROLLS51)};
+    $('rolls').dispatchEvent(new Event('input'));
+    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
+    $('dicego').click();
+    if(!await wait(()=>$('dseed').classList.contains('shield'))) return {err:'panel 2 timeout'};
+    // reveal both, and open a QR from one of them
+    $('gpeek').click(); $('dpeek').click();
+    const revealed = !$('gseed').classList.contains('shield')
+                  && !$('dseed').classList.contains('shield');
+    const made=$('gseed').value, rolled=$('dseed').value;
+    $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never drew'};
     dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
-    await wait(()=>$('in').classList.contains('shield'));
-    return {revealed, reblurred:$('in').classList.contains('shield'),
-      seedKept:$('in').value===seed, qrClosed:$('qrveil').style.display==='none',
+    await wait(()=>$('gseed').classList.contains('shield'));
+    return {revealed,
+      reblurred: $('gseed').classList.contains('shield')
+              && $('dseed').classList.contains('shield'),
+      seedKept: $('gseed').value===made && $('dseed').value===rolled,
+      qrClosed:$('qrveil').style.display==='none',
       canvasWiped:$('qrcanvas').width===1};`);
-  chk('coming back to the page re-blurs the seed and wipes the QR', !r.err
+  chk('coming back re-blurs every field that holds a seed, and wipes the QR', !r.err
       && r.revealed && r.reblurred && r.seedKept && r.qrClosed && r.canvasWiped,
       r.err || JSON.stringify(r));
 
-  r = await p.evaluate(`${HELPERS} $('clr').click();
+  // typed words live in panel 3; this is its field, not a made seed
+  r = await p.evaluate(`${HELPERS} $('finishpath').open=true; $('clr').click();
     $('in').value='abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon';
     dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true}));
     // read the verdict here, before the box is cleared for the next case
@@ -781,16 +853,16 @@ async function guardChecks(browser, base) {
       r.kept && r.blurred && r.emptyLeftAlone, JSON.stringify(r));
 
   r = await p.evaluate(`${HELPERS} $('clr').click();
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    $('inqr').click(); $('qrclose').click();          // close mid-open
+    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    $('gqr').click(); $('qrclose').click();          // close mid-open
     await new Promise(z=>setTimeout(z,900));
     const afterClose={veil:$('qrveil').style.display, canvas:$('qrcanvas').width};
-    $('inqr').click();
+    $('gqr').click();
     dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));   // escape mid-open
     await new Promise(z=>setTimeout(z,900));
     const afterEsc={veil:$('qrveil').style.display, canvas:$('qrcanvas').width};
-    $('inqr').click();
+    $('gqr').click();
     const drew=await wait(()=>$('qrcanvas').width>1);
     return {afterClose, afterEsc, stillWorks:!!drew && $('qrcanvas').width===264};`);
   chk('closing mid-open stays closed, and the QR still opens afterwards', !r.err
@@ -845,9 +917,9 @@ async function guardChecks(browser, base) {
   await p.setViewport(375, 667);
   r = await p.evaluate(`${HELPERS}
     $('clr').click();
-    $('genlen').value='11'; $('genfull').click();
-    if(!await wait(()=>$('in').classList.contains('shield'))) return {err:'genfull timeout'};
-    $('inqr').click();
+    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').classList.contains('shield'))) return {err:'panel 1 timeout'};
+    $('gqr').click();
     if(!await wait(()=>$('qrcanvas').width>1)) return {err:'QR never drew'};
     $('qrdl').click();
     document.querySelector('.qrcard details').open = true;
@@ -888,16 +960,21 @@ async function guardChecks(browser, base) {
       chipScrubbed: !doc.includes(${JSON.stringify(SNAP_CHIP)}),
       rollqScrubbed: !doc.includes(${JSON.stringify(SNAP_ROLLQ)}),
       rollCountScrubbed: !/id="dicecount"[^>]*>73 of 100/.test(doc),
-      fpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP)}) };`);
+      fpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP)}),
+      madeFpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP_MADE)}),
+      rollFpScrubbed: !doc.includes(${JSON.stringify(SNAP_FP_ROLL)}) };`);
   chk('a copy saved mid-use heals its snapshot state on open', !r.err
       && r.healed && r.wrapCleared && r.controlsHidden && r.placeholderCrisp
       && r.endingsHidden && r.gridEmpty && r.statusEmpty && r.noteEmpty
       && r.meterHidden && r.rollCountScrubbed,
       r.err || JSON.stringify(r));
   chk('a saved copy sheds its seed word, fingerprint and dice read-out when opened',
-      !r.err && r.wordScrubbed && r.chipScrubbed && r.fpScrubbed && r.rollqScrubbed,
-      r.err || `note left: ${!r.wordScrubbed}, chosen chip left: ${!r.chipScrubbed}, `
-             + `fingerprint left: ${!r.fpScrubbed}, dice read-out left: ${!r.rollqScrubbed}`);
+      !r.err && r.wordScrubbed && r.chipScrubbed && r.fpScrubbed && r.rollqScrubbed
+      && r.madeFpScrubbed && r.rollFpScrubbed,
+      r.err || `left behind: ${Object.entries({note:!r.wordScrubbed, chip:!r.chipScrubbed,
+        'panel 3 fp':!r.fpScrubbed, 'panel 1 fp':!r.madeFpScrubbed,
+        'panel 2 fp':!r.rollFpScrubbed, 'dice read-out':!r.rollqScrubbed})
+        .filter(([,v])=>v).map(([k])=>k).join(', ') || 'nothing'}`);
 
   await p.close();
 }
@@ -919,8 +996,8 @@ async function diceChecks(browser, base) {
       $('rolls').value = rolls; $('rolls').dispatchEvent(new Event('input'));
       if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
       $('dicego').click();
-      if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === target)) return { err: 'no seed' };
-      return { seed: $('in').value.trim(), label: $('dicego').textContent };
+      if (!await wait(() => $('dseed').value.trim().split(/[ ]+/).length === target)) return { err: 'no seed' };
+      return { seed: $('dseed').value.trim(), label: $('dicego').textContent };
     };
     const a = await g(${JSON.stringify(ROLLS51)}, 12);
     const b = await g(${JSON.stringify(ROLLS100)}, 24);
@@ -942,11 +1019,11 @@ async function diceChecks(browser, base) {
     // still makes 12, or the gate is only cosmetic
     // clear first: an earlier check leaves a 24-word seed in the box, and
     // waiting for "more than one word" would read that instead of this press
-    $('clr').click();
+    $('diceclr').click();
     at(51);
     $('dicego').click();
-    await wait(() => $('in').value.trim().split(/[ ]+/).filter(Boolean).length >= 12);
-    sizes.madeAt51 = $('in').value.trim().split(/[ ]+/).filter(Boolean).length;
+    await wait(() => $('dseed').value.trim().split(/[ ]+/).filter(Boolean).length >= 12);
+    sizes.madeAt51 = $('dseed').value.trim().split(/[ ]+/).filter(Boolean).length;
     return sizes;`);
   chk('the rolls you have decide the sizes offered, never the size you asked for',
       r.r49.off && r.r49.ready.length === 0
@@ -958,41 +1035,41 @@ async function diceChecks(browser, base) {
 
   // 3. it is a finished seed, born hidden, with no ending left to choose
   r = await p.evaluate(`${HELPERS}
-    $('clr').click();
+    $('diceclr').click();
     $('dicepath').open = true;
     [...document.querySelectorAll('#dicesizes .size')].find(b => b.dataset.w === '12').click();
     $('rolls').value = ${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
     if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
     $('dicego').click();
-    if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === 12)) return { err: 'no seed' };
-    await wait(() => $('infpv').textContent !== '…');
-    return { hidden: $('in').classList.contains('shield'),
-             verified: $('in').classList.contains('okseed'),
+    if (!await wait(() => $('dseed').value.trim().split(/[ ]+/).length === 12)) return { err: 'no seed' };
+    await wait(() => $('dfpv').textContent !== '…');
+    return { hidden: $('dseed').classList.contains('shield'),
+             phrase: $('dseed').value.trim(),
              endingsHidden: $('out').style.display === 'none',
              chips: document.querySelectorAll('#grid .w').length,
-             fp: $('infpv').textContent, qr: $('inqr').style.display !== 'none' };`);
+             fp: $('dfpv').textContent, qr: $('dqr').style.display !== 'none' };`);
   chk('a dice seed arrives hidden and complete, with no ending left to pick', !r.err
-      && r.hidden && r.verified && r.endingsHidden && r.chips === 0 && r.qr
+      && r.hidden && validate(r.phrase) && r.endingsHidden && r.chips === 0 && r.qr
       && /^[0-9a-f]{8}$/.test(r.fp), r.err || JSON.stringify(r));
 
   // 4. the gate: patterned rolls write nothing on the first press
   r = await p.evaluate(`${HELPERS}
-    $('clr').click();
+    $('diceclr').click();
     $('dicepath').open = true;
     $('rolls').value = '4'.repeat(50); $('rolls').dispatchEvent(new Event('input'));
     const live = $('dicequal').textContent;
     if (!await wait(() => !$('dicego').disabled)) return { err: 'button never enabled' };
     $('dicego').click();
     await new Promise(r => setTimeout(r, 200));
-    const first = { box: $('in').value, warn: $('diceweak').style.display,
+    const first = { box: $('dseed').value, warn: $('diceweak').style.display,
                     anyway: $('diceanyway').style.display,
                     focused: document.activeElement === $('diceanyway') };
     $('rolls').value = '4'.repeat(51); $('rolls').dispatchEvent(new Event('input'));
     const afterEdit = { warn: $('diceweak').style.display, anyway: $('diceanyway').style.display };
     $('dicego').click(); await new Promise(r => setTimeout(r, 200));
     $('diceanyway').click();
-    if (!await wait(() => $('in').value.trim().split(/[ ]+/).length === 12)) return { err: 'second press did nothing' };
-    return { live, first, afterEdit, made: $('in').value.trim().split(/[ ]+/).length };`);
+    if (!await wait(() => $('dseed').value.trim().split(/[ ]+/).length === 12)) return { err: 'second press did nothing' };
+    return { live, first, afterEdit, made: $('dseed').value.trim().split(/[ ]+/).length };`);
   chk('faked rolls are named, write nothing on the first press, and need a second button',
       !r.err && /do not look rolled/.test(r.live) && r.first.box === ''
       && r.first.warn === 'block' && r.first.anyway === 'block' && r.first.focused === false
@@ -1024,31 +1101,91 @@ async function diceChecks(browser, base) {
   chk('every faked rolling pattern is still caught',
       Object.values(r).every(Boolean), JSON.stringify(r));
 
-  // 7. the two routes are a choice, not a checklist
+  // Three panels, three jobs, three fields. The point of the split is that they
+  // do not share: each keeps its own controls and its own seed, and pressing
+  // Clear in one must leave the other two alone.
   r = await p.evaluate(`${HELPERS}
-    const A = $('apppath'), D = $('dicepath');
-    A.open = false; D.open = false;
-    const atLoad = [A.open, D.open];
-    A.querySelector('.pathbtn').click(); await new Promise(r => setTimeout(r, 60));
-    const afterGenerate = [A.open, D.open];
-    D.querySelector('.pathbtn').click(); await new Promise(r => setTimeout(r, 60));
-    const afterRoll = [A.open, D.open];
-    return { atLoad, afterGenerate, afterRoll,
-      genInApp: A.contains($('genfull')), findInApp: A.contains($('go')),
-      rollsInDice: D.contains($('rolls')), boxOutside: !A.contains($('in')) && !D.contains($('in')),
-      labels: [...document.querySelectorAll('.pathbtn')].map(b => b.textContent) };`);
-  chk('the two routes open one at a time, and each holds its own controls',
-      r.atLoad.join() === 'false,false' && r.afterGenerate.join() === 'true,false'
-      && r.afterRoll.join() === 'false,true' && r.genInApp && r.findInApp
-      && r.rollsInDice && r.boxOutside && r.labels.join() === 'Generate,Roll',
+    const P = ['makepath','dicepath','finishpath'].map($);
+    P.forEach(d => d.open = false);
+    const atLoad = P.map(d => d.open);
+    P[0].querySelector('.pathbtn').click(); await new Promise(r=>setTimeout(r,80));
+    const afterMake = P.map(d => d.open);
+    P[1].querySelector('.pathbtn').click(); await new Promise(r=>setTimeout(r,80));
+    const afterRoll = P.map(d => d.open);
+    return { atLoad, afterMake, afterRoll,
+      labels: [...document.querySelectorAll('.pathbtn')].map(b => b.textContent),
+      // each panel owns its controls and its field
+      ownControls: $('makepath').contains($('genfull')) && $('makepath').contains($('gseed'))
+                && $('dicepath').contains($('rolls'))   && $('dicepath').contains($('dseed'))
+                && $('finishpath').contains($('go'))    && $('finishpath').contains($('in'))
+                && $('finishpath').contains($('out')),
+      // and nothing of one panel lives inside another
+      noBleed: !$('makepath').contains($('in')) && !$('makepath').contains($('dseed'))
+            && !$('dicepath').contains($('gseed')) && !$('finishpath').contains($('gseed')) };`);
+  chk('three panels open one at a time, each holding only its own controls',
+      Array.isArray(r.atLoad) && r.atLoad.join()==='false,false,false'
+      && r.afterMake.join()==='true,false,false' && r.afterRoll.join()==='false,true,false'
+      && r.ownControls && r.noBleed && r.labels.length===3,
       JSON.stringify(r));
+
+  // The whole point of three panels: fill all three, then clear one. A Clear that
+  // reaches past its own panel used to be the default, because scrubDerived()
+  // wipes everything and panel 3's Clear called it.
+  r = await p.evaluate(`${HELPERS}
+    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
+    $('dicepath').open=true;
+    $('rolls').value=${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
+    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
+    $('dicego').click();
+    if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
+    $('finishpath').open=true;
+    $('in').value='abandon '.repeat(11).trim(); $('go').click();
+    if(!await wait(()=>$('out').style.display==='block')) return {err:'panel 3 timeout'};
+    const held = () => [!!$('gseed').value, !!$('dseed').value, !!$('in').value];
+    const all = held();
+    // three distinct seeds, none equal to another
+    const distinct = new Set([$('gseed').value, $('dseed').value]).size === 2;
+    $('clr').click();      const afterFinish = held();
+    $('gclr').click();     const afterMake   = held();
+    $('diceclr').click();  const afterRoll   = held();
+    return { all, distinct, afterFinish, afterMake, afterRoll,
+             rollsAlsoCleared: $('rolls').value === '' };`);
+  chk('each panel holds its own seed, and each Clear touches only its own panel',
+      !r.err && r.all.join()==='true,true,true' && r.distinct
+      && r.afterFinish.join()==='true,true,false'
+      && r.afterMake.join()==='false,true,false'
+      && r.afterRoll.join()==='false,false,false' && r.rollsAlsoCleared,
+      r.err || JSON.stringify(r));
+
+  // Invariant 7 used to govern one field and now governs three: a seed in any of
+  // them must come back blurred and must not survive into a saved copy.
+  r = await p.evaluate(`${HELPERS}
+    $('makepath').open=true; $('genlen').value='12'; $('genfull').click();
+    if(!await wait(()=>$('gseed').value)) return {err:'panel 1 timeout'};
+    $('dicepath').open=true;
+    $('rolls').value=${JSON.stringify(ROLLS51)}; $('rolls').dispatchEvent(new Event('input'));
+    if(!await wait(()=>!$('dicego').disabled)) return {err:'dice never armed'};
+    $('dicego').click();
+    if(!await wait(()=>$('dseed').value)) return {err:'panel 2 timeout'};
+    await wait(()=>$('gfpv').textContent!=='…' && $('dfpv').textContent!=='…');
+    const born = $('gseed').classList.contains('shield') && $('dseed').classList.contains('shield');
+    const fps  = [$('gfpv').textContent, $('dfpv').textContent];
+    // what File > Save Page As would write
+    const doc = '<!doctype html>' + document.documentElement.outerHTML;
+    return { born, fps,
+      seedsInBytes: doc.includes($('gseed').value) || doc.includes($('dseed').value),
+      fpsInBytes: fps.some(f => doc.includes(f)) };`);
+  chk('seeds in every panel are born hidden and never reach a saved copy',
+      !r.err && r.born && r.fps.every(f => /^[0-9a-f]{8}$/.test(f)) && !r.seedsInBytes,
+      r.err || JSON.stringify(r));
 
   // 8. the heading survives a phone. A fixed-width button beside a flexible
   // title collapsed it to one word per line at 320px, which overflowed nothing
   // and so passed every check there was.
   await p.setViewport(320, 700);
   r = await p.evaluate(`${HELPERS}
-    $('apppath').open = false; $('dicepath').open = false;
+    $('makepath').open = false; $('dicepath').open = false;
     await new Promise(r => setTimeout(r, 120));
     return [...document.querySelectorAll('.pathtitle')].map(e => {
       const s = getComputedStyle(e), h = e.getBoundingClientRect().height;
@@ -1144,8 +1281,8 @@ async function calibrate(browser, fileUrl) {
              .replace('<div class="inwrap" id="inwrap">', '<div class="inwrap on fp" id="inwrap">')
              .replace('<div class="inctl" id="inctl" style="display:none">',
                       '<div class="inctl" id="inctl" style="display: flex;">')
-             .replace('<div class="card" id="out" style="display:none">',
-                      '<div class="card" id="out" style="display: block;">')
+             .replace('<div id="out" style="display:none">',
+                      '<div id="out" style="display: block;">')
              .replace('<div class="h on" id="outlbl"></div>',
                       '<div class="h on" id="outlbl">Word 12 · 128 valid endings</div>')
              .replace('<div class="grid" id="grid"></div>',
@@ -1155,6 +1292,12 @@ async function calibrate(browser, fileUrl) {
              .replace('<div class="status" id="st"></div>',
                       '<div class="status ok" id="st">✓  Complete 12-word seed in the box above.</div>')
              .replace('<b id="infpv">…</b>', `<b id="infpv">${SNAP_FP}</b>`)
+             .replace('<b id="gfpv">…</b>', `<b id="gfpv">${SNAP_FP_MADE}</b>`)
+             .replace('<b id="dfpv">…</b>', `<b id="dfpv">${SNAP_FP_ROLL}</b>`)
+             .replace('<div class="infp" id="gfp" style="display:none">',
+                      '<div class="infp" id="gfp" style="display: block;">')
+             .replace('<div class="infp" id="dfp" style="display:none">',
+                      '<div class="infp" id="dfp" style="display: block;">')
              .replace('<div class="infp" id="infp" style="display:none">',
                       '<div class="infp" id="infp" style="display: block;">')
              .replace('<div class="meter" id="meter" style="display:none">',

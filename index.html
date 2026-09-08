@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy"
       content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; form-action 'none'; base-uri 'none'">
-<meta name="description" content="Find every valid final word for the words you have, or make a complete BIP-39 seed from your browser's randomness or your own dice rolls. One self-contained file that works offline, never touches the internet, SeedQR export.">
+<meta name="description" content="Make a BIP-39 seed phrase from your browser's randomness or your own dice rolls, or find every valid final word for words you already have. One self-contained file that works offline, never touches the internet, SeedQR export.">
 <title>My Seed Phrase</title>
 <!-- The same mark as the header, inline. A data: URI is not a fetch, so this adds
      no request — it removes one, the automatic /favicon.ico that would 404. -->
@@ -27,6 +27,9 @@
     --field:#FFFFFF; --fieldline:rgba(27,24,20,.16);
     --grid:rgba(247,147,26,0.055); --glow:rgba(247,147,26,0.10);
     --shadow:0 1px 2px rgba(27,24,20,.04),0 8px 24px rgba(27,24,20,.05);
+    /* --line is 0.13 alpha: right for dividers, invisible as a button edge on a
+       white panel (1.3:1). This clears the 3:1 WCAG asks of a UI boundary. */
+    --btnline:rgba(27,24,20,.48);
     --sans:-apple-system,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
     --display:'Avenir Next','Avenir','Nunito Sans','Segoe UI Variable Display',
@@ -49,6 +52,7 @@
     --line:rgba(255,255,255,0.12); --line2:rgba(255,255,255,0.08);
     --ink:#F4F6FB; --muted:rgba(244,246,251,0.72); --dim:rgba(244,246,251,0.5);
     --accent-ink:#F7931A; --green-ink:#36D399; --red-ink:#F87171;
+    --btnline:rgba(255,255,255,.42);
     --code-ink:#F0B429; --code-bg:rgba(240,180,41,.08);
     --field:rgba(255,255,255,.06); --fieldline:rgba(255,255,255,.24);
     --grid:rgba(247,147,26,0.025); --glow:rgba(247,147,26,0.13);
@@ -87,14 +91,6 @@
   .dek{font-size:clamp(1rem,2vw,1.2rem);color:var(--muted);max-width:44rem;line-height:1.45}
   .dek b{color:var(--ink)}
   /* ---- hero call-to-action: the "how do I do it" answer ---- */
-  .ctarow{display:flex;align-items:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap}
-  .cta{display:inline-flex;align-items:center;gap:.5rem;text-decoration:none;
-    font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-    padding:.85rem 1.4rem;border-radius:9px;background:var(--orange);color:#000;
-    border:1px solid var(--orange);transition:background .15s,border-color .15s}
-  .cta:hover{background:var(--gold);border-color:var(--gold)}
-  .cta:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
-  .ctanote{font-size:var(--fs-sm);color:var(--dim);letter-spacing:.02em}
   /* ---- tooltips: hover/focus on desktop, tap on mobile (JS toggles .on) ---- */
   .tipwrap{position:relative;display:inline-flex;align-items:center}
   /* solid ink chip — a pale outline disappeared on the light ground. The
@@ -180,9 +176,13 @@
   .invalidnote{display:none;font-size:var(--fs-md);font-weight:600;color:var(--red-ink);
     margin-top:.7rem}
   .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:1rem}
+  /* 2px at --btnline clears the 3:1 a UI boundary is asked for; --line at 0.13
+     alpha reads about 1.3:1 on a white card, which is no edge at all. Applied to
+     every button so none of them looks special, and the padding absorbs the
+     extra pixel so heights stay put. */
   button{font-family:var(--sans);font-size:var(--fs-sm);font-weight:700;letter-spacing:.1em;
-    text-transform:uppercase;padding:.7rem 1.15rem;border-radius:9px;cursor:pointer;
-    border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    text-transform:uppercase;padding:calc(.7rem - 1px) calc(1.15rem - 1px);border-radius:9px;
+    cursor:pointer;border:2px solid var(--btnline);background:var(--panel);color:var(--muted);
     transition:border-color .15s,color .15s,background .15s}
   button:hover{border-color:rgba(247,147,26,.5);color:var(--ink)}
   button.primary{background:var(--orange);border-color:var(--orange);color:#000}
@@ -238,7 +238,7 @@
      solid ground and full-contrast text explicitly. */
   option{background:var(--bg);color:var(--ink)}
   .meter{margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid var(--line2)}
-  #inputcard,#meter{scroll-margin-top:1.25rem}
+  #routes,#meter{scroll-margin-top:1.25rem}
   .mrow{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-bottom:.55rem}
   .mlab{font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
   .mval{font:700 var(--fs-md) var(--mono)}
@@ -248,6 +248,8 @@
   .mnote{font-size:var(--fs-sm);color:var(--muted);margin-top:.7rem;line-height:1.6}
   .mnote b{color:var(--ink);font-weight:700}
   .ok-c{color:var(--green-ink)} .warn-c{color:var(--accent-ink)} .bad-c{color:var(--red-ink)}
+  /* One control with two positions, not two buttons dressed as one: the thumb
+     slides, so the state is where it is rather than which of a pair is lit. */
   /* ---- the two routes to a seed ---- */
   /* Both paths land in the same box, so they are presented as siblings with the
      same shape: a number, a prominent title, and one honest line about the
@@ -291,6 +293,11 @@
   .pathtitle{font-size:var(--fs-lg);font-weight:700;letter-spacing:-.01em;color:var(--ink)}
   .pathsub{font-size:var(--fs-sm);color:var(--muted);line-height:1.6}
   .pathbody{margin-top:1.3rem;padding-top:1.2rem;border-top:1px solid var(--line2)}
+  /* every panel's controls collect on the right, and nothing butts up against
+     the field it fills */
+  .pathbody>.row{justify-content:flex-end}
+  .pathbody>.row+.inwrap{margin-top:1rem}
+  .pathbody>.inwrap+.row{margin-top:1rem}
   .sublab{font-size:var(--fs-xs);font-weight:700;letter-spacing:.18em;text-transform:uppercase;
     color:var(--dim);margin-top:1.4rem}
   .pathbody>.sublab:first-child{margin-top:0}
@@ -619,13 +626,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
       aria-label="Why this page is safe to use">i</button><span class="tipbox" role="tooltip"
       ><b>Nothing</b> leaves this page.<br><b>Offline</b>: works with the wi-fi
       off.<br><b>One page</b>: nothing to install.</span></span></h1>
-  <p class="dek"><b>The BIP-39 last-word calculator &amp; seed generator.</b> The last word is
-     never a free choice. Give the app your words and it returns every valid ending, or makes
-     a whole seed, from the browser's randomness or your own dice. Nothing touches the
+  <p class="dek"><b>Make a BIP-39 seed phrase, or finish one you already have.</b> The words
+     can come from your browser's randomness or from dice you roll yourself. Give it the words
+     you have instead and it returns every ending the checksum allows. Nothing touches the
      internet.</p>
-  <div class="ctarow">
-    <a class="cta" href="#inputcard">Find my last word ↓</a>
-  </div>
 
   <div class="warn">
     <details>
@@ -669,55 +673,62 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div id="testbody"></div>
   </div>
 
-  <div class="card" id="paths">
-    <div class="h">Two ways to make a seed</div>
-    <p class="pathslede">Both put a finished seed in the box below. The difference is
-      where the randomness comes from.</p>
+  <div class="card" id="routes">
+    <div id="badge" class="badge on"><span class="led"></span><span id="badgetxt">Checking…</span></div>
+    <div class="h">What do you want to do?</div>
+    <p class="pathslede">Pick the one that matches where you are starting from: nothing at all,
+      a handful of dice, or a phrase that is one word short.</p>
 
-    <details class="path" id="apppath">
+    <details class="path" id="makepath">
       <summary class="pathhead">
         <span class="pathnum">1</span>
-          <span class="pathtitle">Let the app make it</span>
-          <span class="pathsub">The quick route. The words come from your browser’s random
-            number generator.</span>
-        <span class="pathbtn">Generate</span>
+        <span class="pathtitle">Make a new seed</span>
+        <span class="pathsub">The quick route. Your browser's random number generator draws
+          every word.</span>
+        <span class="pathbtn">Create</span>
       </summary>
       <div class="pathbody">
-      <div class="sublab">Make a new seed</div>
-      <div class="row">
-      <select id="genlen" aria-label="How long a seed to make">
-        <option value="11">12-word seed</option>
-        <option value="14">15-word seed</option>
-        <option value="17">18-word seed</option>
-        <option value="20">21-word seed</option>
-        <option value="23">24-word seed</option>
-      </select>
-      <button id="gen">Generate 11 words</button>
-      <button class="primary" id="genfull">Generate all 12</button>
-      <span class="tipwrap"><button class="tipbtn" type="button"
-        aria-label="What the generate buttons do">i</button><span class="tipbox"
-        role="tooltip">Both draw from your browser's random number generator, the one built
-        for security work. The shorter one stops a word short, so you can watch the checksum
-        narrow the endings and pick one yourself; the other is finished for you. Nothing is
-        saved, recorded or sent anywhere.</span></span>
+        <div class="row">
+          <select id="genlen" aria-label="How long a seed to make">
+            <option value="12">12 words</option>
+            <option value="15">15 words</option>
+            <option value="18">18 words</option>
+            <option value="21">21 words</option>
+            <option value="24">24 words</option>
+          </select>
+          <button class="primary" id="genfull">Generate</button>
+          <button id="gclr">Clear</button>
+        </div>
+      <div class="inwrap" id="gwrap">
+        <textarea id="gseed" readonly spellcheck="false" placeholder="your seed appears here, hidden until you press the eye"></textarea>
+        <div class="inctl" id="gctl" style="display:none">
+          <button class="ictl" id="gpeek" type="button" aria-label="Show the seed" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+              <line id="gpeekslash" x1="4" y1="21" x2="20" y2="3" style="display:none"/>
+            </svg></button>
+          <button class="ictl" id="gcopy" type="button" aria-label="Copy the seed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg></button>
+          <button class="ictl" id="gqr" type="button" aria-label="Show as a SeedQR">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+              <path d="M14 14h3v3h-3z"/><path d="M21 14v1M14 21h1M21 20v1h-1"/>
+            </svg></button>
+        </div>
+        <div class="infp" id="gfp" style="display:none">Master fingerprint&ensp;<b id="gfpv">…</b></div>
       </div>
-      <div class="hint">Stopping a word short lets you choose the last one yourself.</div>
-      <div class="sublab">Or finish a seed you already have</div>
-      <p class="pathnote">Type 11, 14, 17, 20 or 23 words into the box below and the app
-        returns every final word the checksum allows.</p>
-      <div class="row">
-        <button class="primary" id="go">Find checksum words</button>
-        <button id="ex">Load example</button>
-      </div>
+      <div class="hint" id="ghint" style="display:none"></div>
       </div>
     </details>
 
     <details class="path" id="dicepath">
       <summary class="pathhead">
         <span class="pathnum">2</span>
-          <span class="pathtitle">Roll your own randomness</span>
-          <span class="pathsub">The slow route. Your dice decide every word, so you need not
-            take the browser on trust.</span>
+        <span class="pathtitle">Roll your own randomness</span>
+        <span class="pathsub">The slow route. Your dice decide every word, so you need not take
+          the browser on trust.</span>
         <span class="pathbtn">Roll</span>
       </summary>
       <div class="pathbody">
@@ -753,60 +764,89 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="dicewarn" id="diceagain" style="display:none"></div>
     <div class="row">
       <button class="primary" id="dicego" disabled>Make a seed</button>
-      <button id="diceclr">Clear rolls</button>
+      <button id="diceclr">Clear</button>
       <button id="dicepeek" aria-pressed="true" aria-label="Hide the rolls">Hide rolls</button>
     </div>
+      <div class="inwrap" id="dwrap">
+        <textarea id="dseed" readonly spellcheck="false" placeholder="your seed appears here, hidden until you press the eye"></textarea>
+        <div class="inctl" id="dctl" style="display:none">
+          <button class="ictl" id="dpeek" type="button" aria-label="Show the seed" aria-pressed="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+              <line id="dpeekslash" x1="4" y1="21" x2="20" y2="3" style="display:none"/>
+            </svg></button>
+          <button class="ictl" id="dcopy" type="button" aria-label="Copy the seed">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg></button>
+          <button class="ictl" id="dqr" type="button" aria-label="Show as a SeedQR">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+              <path d="M14 14h3v3h-3z"/><path d="M21 14v1M14 21h1M21 20v1h-1"/>
+            </svg></button>
+        </div>
+        <div class="infp" id="dfp" style="display:none">Master fingerprint&ensp;<b id="dfpv">…</b></div>
+      </div>
+      <div class="hint" id="dhint" style="display:none"></div>
       </div>
     </details>
-  </div>
-
-  <div class="card" id="inputcard">
-    <div id="badge" class="badge on"><span class="led"></span><span id="badgetxt">Checking…</span></div>
-    <div class="h">Your seed</div>
-    <div class="inwrap" id="inwrap">
-    <textarea id="in" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
-      placeholder="type, paste or generate an incomplete seed, separated by spaces, or generate a complete seed instead"></textarea>
-    <div class="inctl" id="inctl" style="display:none">
-      <button class="ictl" id="peek" type="button" aria-label="Show the seed" aria-pressed="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
-          <line id="peekslash" x1="4" y1="21" x2="20" y2="3" style="display:none"/>
-        </svg></button>
-      <button class="ictl" id="incopy" type="button" aria-label="Copy the seed">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-        </svg></button>
-      <button class="ictl" id="inqr" type="button" aria-label="Show as a SeedQR">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-          <path d="M14 14h3v3h-3z"/><path d="M21 14v1M14 21h1M21 20v1h-1"/>
-        </svg></button>
-    </div>
-    <div class="infp" id="infp" style="display:none">Master fingerprint&ensp;<b id="infpv">…</b></div>
-    </div>
-    <div class="invalidnote" id="invalidnote"></div>
-    <div class="hint" id="inhint" style="display:none"></div>
-    <div class="row">
-      <button id="clr">Clear</button>
-    </div>
-    <div class="status" id="st"></div>
-    <div class="meter" id="meter" style="display:none">
-      <div class="mrow">
-        <span class="mlab">How hard these words are to guess</span>
-        <span class="mval" id="mval"></span>
+    <details class="path" id="finishpath">
+      <summary class="pathhead">
+        <span class="pathnum">3</span>
+        <span class="pathtitle">Finish a seed you already have</span>
+        <span class="pathsub">You have 11, 14, 17, 20 or 23 words. The app returns every final
+          word the checksum allows.</span>
+        <span class="pathbtn">Finish</span>
+      </summary>
+      <div class="pathbody">
+      <div class="inwrap" id="inwrap">
+      <textarea id="in" spellcheck="false" autocomplete="off" autocapitalize="off" autocorrect="off"
+        placeholder="type or paste the words you have, separated by spaces"></textarea>
+      <div class="inctl" id="inctl" style="display:none">
+        <button class="ictl" id="peek" type="button" aria-label="Show the seed" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
+            <line id="peekslash" x1="4" y1="21" x2="20" y2="3" style="display:none"/>
+          </svg></button>
+        <button class="ictl" id="incopy" type="button" aria-label="Copy the seed">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg></button>
+        <button class="ictl" id="inqr" type="button" aria-label="Show as a SeedQR">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+            <path d="M14 14h3v3h-3z"/><path d="M21 14v1M14 21h1M21 20v1h-1"/>
+          </svg></button>
       </div>
-      <div class="bar"><div class="fill" id="mfill"></div></div>
-      <div class="mnote" id="mnote"></div>
-    </div>
-  </div>
-
-  <div class="card" id="out" style="display:none">
+      <div class="infp" id="infp" style="display:none">Master fingerprint&ensp;<b id="infpv">…</b></div>
+      </div>
+      <div class="invalidnote" id="invalidnote"></div>
+      <div class="hint" id="inhint" style="display:none"></div>
+      <div class="row">
+        <button class="primary" id="go">Find checksum words</button>
+        <button id="ex">Load example</button>
+        <button id="clr">Clear</button>
+      </div>
+      <div class="status" id="st"></div>
+      <div class="meter" id="meter" style="display:none">
+        <div class="mrow">
+          <span class="mlab">How hard these words are to guess</span>
+          <span class="mval" id="mval"></span>
+        </div>
+        <div class="bar"><div class="fill" id="mfill"></div></div>
+        <div class="mnote" id="mnote"></div>
+      </div>
+      <div id="out" style="display:none">
     <div class="cardhead">
       <div class="h on" id="outlbl"></div>
       <button id="rand">Pick at random</button>
     </div>
     <div class="grid" id="grid"></div>
     <div class="hint" id="randnote" style="display:none"></div>
+      </div>
+      </div>
+    </details>
+
   </div>
 
   <div class="card">
@@ -818,42 +858,43 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
 
       <details>
         <summary>Why would I use this tool? What does it do for me?</summary>
-        <p>It does three jobs. <b>Finish a seed:</b> if you chose your first 11, 14, 17, 20 or
-        23 words yourself (by dice, by hand, or with another tool), a wallet will still reject
-        the phrase unless the last word carries the right checksum. Type your words in and this
-        page computes every last word that works. <b>Create a seed:</b> two ways, both entirely on
-        your machine. The generate buttons draw a brand-new phrase from your browser's
-        cryptographic randomness; or roll a die yourself, type the numbers in, and the app
-        turns your rolls into the words: slower, and the one route that does not ask you to
-        trust the browser's randomness at all. <b>Understand a seed:</b> the questions below explain why the
-        last word is special, what the checksum does, and what makes a phrase strong or weak.
-        For a seed that will guard real money, follow the six steps at the top and run this
-        page offline first.</p>
+        <p>The page has three panels, and they are the three jobs. <b>Make a new seed:</b> choose
+        a length, press Generate, and your browser's cryptographic randomness draws every word.
+        <b>Roll your own randomness:</b> roll a die, type the numbers in, and the app turns your
+        rolls into the words: slower, and the one route that does not ask you to trust the
+        browser's randomness at all. <b>Finish a seed you already have:</b> if you chose your
+        first 11, 14, 17, 20 or 23 words yourself, by dice, by hand or with another tool, a
+        wallet will reject the phrase unless the last word carries the right checksum, and this
+        page lists every last word that works. The questions below are the fourth thing it does:
+        explain why the last word is special, what the checksum does, and what makes a phrase
+        strong or weak. For a seed that will guard real money, follow the six steps at the top
+        and run this page offline first.</p>
       </details>
 
       <details>
         <summary>What do all the buttons actually do?</summary>
-        <p><b>Find checksum words</b> takes the words in the box and lists every valid final
-        word for them. Click any candidate to see the completed phrase.</p>
-        <p><b>Generate 11 words</b> (or 14, 17, 20, 23, depending on the seed length you
-        chose) draws that many random words and calculates their valid endings, but leaves
-        the choice of ending to you. Use it when you want to see the candidates and pick your
-        own.</p>
-        <p><b>Generate all 12</b> (or all 15, 18, 21, 24) does everything in one press:
-        draws the random words, calculates the endings, and picks one at random too. The finished, wallet-ready
-        phrase lands in the box, blurred until the eye button reveals it.</p>
-        <p><b>Pick at random</b>: once endings are listed, lets the browser's cryptographic
-        generator choose one for you instead of you clicking a favourite.
-        <b>Roll</b> opens the dice route: choose the length you want, roll a six-sided die
-        that many times, and type each number as you go. The count tells you how many rolls
-        are still needed: 50 for a 12-word seed, 100 for 24. <b>Make a seed</b> turns the
-        finished rolls into words, <b>Clear rolls</b> wipes them, and <b>Hide rolls</b> covers
-        them the way the eye button covers the words.</p>
-        <p><b>Load example</b> fills the box with the BIP-39 standard's published test
-        phrase. Safe to experiment with; never use it for real funds.</p>
-        <p><b>Verify this page</b> runs the built-in self-test: the page recomputes answers
-        published in the BIP-39 standard and checks its own word list is unaltered.</p>
-        <p><b>Clear</b> empties the box and all results.</p>
+        <p>The page has three panels and each one keeps its own buttons and its own seed
+        field. Nothing you press in one panel changes another.</p>
+        <p><b>Make a new seed.</b> Choose a length, press <b>Generate</b>, and a finished
+        phrase appears in that panel's field, blurred until the eye reveals it.
+        <b>Clear</b> empties it.</p>
+        <p><b>Roll your own randomness.</b> Choose the length you want and the panel tells you
+        how many throws it needs: 50 for a 12-word seed, 100 for 24. Type each throw as you go
+        and the count keeps score. <b>Make a seed</b> turns the finished rolls into words,
+        <b>Hide rolls</b> covers the numbers the way the eye covers the words, and
+        <b>Clear</b> wipes the rolls and the seed together.</p>
+        <p><b>Finish a seed you already have.</b> Type the words you have and press
+        <b>Find checksum words</b> to list every final word that completes them. Click any one
+        to see the finished phrase, or <b>Pick at random</b> to let the browser's cryptographic
+        generator choose for you. <b>Load example</b> fills the field with the standard's
+        published test phrase, which is safe to experiment with and must never hold funds.
+        <b>Clear</b> empties the field and the list.</p>
+        <p>Above all three, <b>Verify this page</b> runs the built-in self-test: the page
+        recomputes answers published in the BIP-39 standard, re-derives a seed from a fixed
+        dice vector, and checks its own word list is unaltered.</p>
+        <p>Beside every seed field: the <b>eye</b> shows or hides the words, <b>copy</b> puts
+        them on the clipboard, and the <b>QR</b> button shows them as a SeedQR a wallet can
+        scan.</p>
       </details>
 
       <div class="grp2">The last word</div>
@@ -919,10 +960,8 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         draw lands on a word directly instead of being squeezed down to fit. That matters:
         squeezing is what makes some words come up slightly more often than others. Here every
         word is exactly as likely as every other.</p>
-        <p>Both generate buttons use it: the longer one draws every word including the
-        ending in one press, and the shorter one stops a word short so you can see the checksum
-        at work and choose the ending yourself. Either way
-        ends at the same place: a phrase whose every word came from the generator.</p>
+        <p>Panel 1 uses it: press Generate and every word of the seed, including the last,
+        comes from that generator in one press.</p>
         <p>One route does not use it at all. Roll your own dice, type the numbers in, and your
         rolls decide every word; the app only does the arithmetic. That is the slow way, and
         the only one that does not ask you to take either the browser's generator or this page
@@ -1072,10 +1111,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
   </div>
 
   <footer>
-    <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
+    <div class="l">MY SEED PHRASE <span>· MAKE OR FINISH A BIP-39 SEED</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.13 · RUNS OFFLINE</div>
+    <div class="r">v1.8.0 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -3495,7 +3534,7 @@ function shieldReset() {
 // themselves. This runs when the box is cleared and again when the page opens,
 // because a copy saved mid-use carries them in, and no reload can remove what
 // has become part of the file.
-function scrubDerived() {
+function scrubFinish() {
   current = []; prefix = [];
   $("out").style.display = "none";
   $("outlbl").textContent = "";
@@ -3513,7 +3552,6 @@ function scrubDerived() {
   // the rounded number. Drop the attribute rather than blanking the two
   // properties, so a scrubbed copy matches the file as published.
   $("mfill").removeAttribute("style");
-  scrubDice();                        // the rolls derive a seed, so they derive secrets too
   $("st").className = "status";
   $("st").textContent = "";
   $("inhint").textContent = "";
@@ -3524,6 +3562,16 @@ function scrubDerived() {
 // words. The eye, copy and QR serve hand-entered seeds too, and a box that
 // was hidden when typing began stays hidden, so a passer-by never sees the
 // entry. Whole-seed state and the now-stale fingerprint still clear.
+// Everything, for the load-time scrub and nothing else. Each panel's own Clear
+// reaches only its own panel: pressing Clear in one must not empty another, or
+// the panels stop being independent, which is the whole point of them.
+function scrubDerived() {
+  scrubFinish();
+  scrubDice();
+  madeField.clear();
+  diceField.clear();
+}
+
 function showControls() {
   whole = false;
   $("inwrap").classList.remove("fp");
@@ -3646,16 +3694,15 @@ async function calculate(reveal = true) {
   return true;
 }
 
-// Scroll far enough to show that endings were produced, without pushing the
-// entropy read-out off screen — someone with a weak phrase needs to see that
-// warning at the same time as the result. With the verification panel open
-// there is more to clear, so anchor on the read-out itself; otherwise anchor on
-// the whole input card, which keeps it entirely in view.
+// The endings land below the two routes, because the buttons that produce them
+// are down there. Anchoring on the seed card would now throw the reader to the
+// top of the page, away from the button they just pressed and away from the list
+// they asked for. The cost of the move: the strength read-out lives with the box
+// at the top, so it can no longer share a screen with the endings the way it
+// used to. Someone finishing a weak hand-typed phrase sees the result here and
+// the warning up there.
 function revealResults() {
-  const verifying = $("testout").style.display !== "none";
-  const meterShown = $("meter").style.display !== "none";
-  const anchor = (verifying && meterShown) ? $("meter") : $("inputcard");
-  anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("out").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function selfTest() {
@@ -4071,33 +4118,98 @@ function pickAtRandom() {
 }
 $("rand").onclick = () => pickAtRandom();
 
-// The whole phrase in one press. No new arithmetic: it is the three steps the
-// page already does, run back to back — draw the words, work out which endings
-// the checksum allows, pick one of them uniformly. For 24 words that is 23
-// uniform words carrying 253 bits plus a uniform choice among 8 endings
-// carrying the last 3, which is the same 256 bits BIP-39 specifies, reached
-// from the other end.
+// Panel 1 draws its entropy whole rather than borrowing the endings machinery:
+// 16 bytes for 12 words through 32 for 24, then the same entropyToWords() the
+// dice route uses. No masking, so nothing to bias; no candidates(), so panel 1
+// touches none of panel 2's state. randomWords()'s power-of-two assertion has no
+// job here, but entropyToWords indexes 11 bits at a time, so the list must still
+// be 2048 long and this says so rather than assuming it.
+async function makeSeed(len) {
+  if (!globalThis.crypto || !crypto.getRandomValues)
+    throw new Error("no cryptographic RNG available in this browser");
+  if (WORDS.length !== 2048)
+    throw new Error("wordlist is not 2048 entries; the words would be wrong");
+  const ent = new Uint8Array(len / 3 * 4);
+  crypto.getRandomValues(ent);
+  return entropyToWords(ent);
+}
 $("genfull").onclick = async () => {
   if (FRAMED) return;
   try {
-    $("in").value = randomWords(+$("genlen").value).join(" ");
+    const len = +$("genlen").value;
+    madeField.show(await makeSeed(len),
+      `All ${len} words came from your browser's random number generator, the one built for `
+      + `security work. Nothing was chosen by hand. A wallet will accept it as it stands. `
+      + `Write it down by hand before you do anything else.`);
   } catch (e) {
+    madeField.clear();
     $("st").className = "status bad";
     $("st").textContent = "✕  " + e.message + ". Do not use this page to generate a phrase.";
-    return;
   }
-  // calculate() has already said why if it could not finish. No scrolling in
-  // this flow at all — everything the user needs appears where they already
-  // are, and the status line says the endings are listed below.
-  if (!await calculate(false)) return;
-  whole = true;
-  pickAtRandom();
-  const cfg = CFG[prefix.length];
-  $("st").textContent = `✓  Complete ${cfg.n}-word seed in the box above: its ending was `
-    + `picked from the ${current.length} valid endings below.`;
-  // it arrives hidden; the eye reveals it
-  shieldOn();
 };
+
+document.querySelectorAll("#dicesizes .size").forEach(b =>
+  b.addEventListener("click", () => setDiceTarget(+b.dataset.w)));
+$("rolls").addEventListener("input", updateDice);
+/* ---- a result field, one per panel that makes a seed ----------------- */
+// Panels 1 and 3 each own a field. Nothing is shared: a seed made by one never
+// appears in another, which is the point of the three-panel split. The cost is
+// that invariant 7 now governs three fields rather than one, so each registers
+// what it writes with scrubDerived() and re-blurs itself on return. Panel 2
+// keeps its own older machinery because it does a different job: it takes words
+// in as well as putting them out.
+function resultField(p) {
+  const el = s => $(p + s);
+  let fpToken = 0;
+  const setPeek = visible => {
+    el("peek").setAttribute("aria-pressed", String(visible));
+    el("peek").setAttribute("aria-label", visible ? "Hide the seed" : "Show the seed");
+    el("peekslash").style.display = visible ? "block" : "none";
+  };
+  const api = {
+    words: () => el("seed").value.trim().split(/\s+/).filter(Boolean),
+    value: () => el("seed").value.trim(),
+    show(words, hint) {                       // born hidden, whatever made it
+      el("seed").value = words.join(" ");
+      el("seed").classList.add("shield");
+      el("wrap").classList.add("on", "fp");
+      el("ctl").style.display = "flex";
+      setPeek(false);
+      el("fp").style.display = "block";
+      el("fpv").textContent = "…";
+      const t = ++fpToken;
+      masterFingerprint(words).then(fp => {
+        if (t === fpToken) el("fpv").textContent = fp || "unavailable";
+      });
+      el("hint").style.display = "block";
+      el("hint").textContent = hint;
+    },
+    hide() { el("seed").classList.add("shield"); setPeek(false) },
+    clear() {
+      fpToken++;
+      el("seed").value = "";
+      el("seed").classList.remove("shield");
+      el("wrap").classList.remove("on", "fp");
+      el("ctl").style.display = "none";
+      el("fp").style.display = "none";
+      el("fpv").textContent = "…";
+      el("hint").style.display = "none";
+      el("hint").textContent = "";
+    },
+  };
+  el("peek").onclick = () => setPeek(!el("seed").classList.toggle("shield"));
+  el("copy").onclick = () => {
+    copy(api.value());
+    el("hint").style.display = "block";
+    el("hint").textContent = "⚠︎ Copied. The clipboard can be read by any program running on "
+      + "this computer, and a Mac will pass it to your iPhone and iPad. For a seed that will "
+      + "hold real money, write it down by hand instead.";
+  };
+  el("qr").onclick = () => openSeedQR(api.value());
+  return api;
+}
+const madeField = resultField("g");
+const diceField = resultField("d");
 
 /* ---- dice --------------------------------------------------------- */
 // A die has six faces, which is not a power of two, so rolls cannot be mapped
@@ -4281,10 +4393,10 @@ async function diceGenerate(acknowledged) {
   $("diceanyway").style.display = "none";
   const ent = await rollsToEntropy(rolls);
   const words = await entropyToWords(ent.slice(0, best / 3 * 4));   // 12→16B … 24→32B
-  $("in").value = words.join(" ");
-  showControls();
-  shieldOn();                       // born hidden, like anything else generated here
-  updateMeter();
+  // panel 3 writes into panel 3, and nowhere else
+  diceField.show(words,
+    `All ${best} words came from your dice, including the last one. Write it down by hand `
+    + `before you do anything else.`);
   if (diceMadeCount) {
     $("diceagain").style.display = "block";
     $("diceagain").innerHTML = "⚠︎ <b>This is a different seed, not a longer version of the "
@@ -4295,34 +4407,21 @@ async function diceGenerate(acknowledged) {
   }
   diceMadeFrom = rolls; diceMadeCount++;
   updateDice();
-  $("st").className = "status ok";
-  $("st").textContent = `✓  Complete ${best}-word seed in the box above, made from your `
-    + `${rolls.length} rolls.`;
-  $("inhint").style.display = "block";
-  $("inhint").textContent = `All ${best} words came from your dice, including the last one. `
-    + `Write it down by hand before you do anything else.`;
-  $("inputcard").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 // The two routes are a choice, not a checklist: opening one closes the other,
 // so the page never shows two half-open paths competing for the same box.
-document.querySelectorAll("#paths .path").forEach(d => d.addEventListener("toggle", () => {
-  if (!d.open) return;
-  document.querySelectorAll("#paths .path").forEach(o => { if (o !== d) o.open = false });
-  // An opened path unfolds a tall body and pushes the seed box below the fold,
-  // leaving the buttons and the box they fill in different screenfuls. Bring the
-  // section to the top so both are in view. Called straight out, not on the next
-  // frame: scrollIntoView flushes layout itself, so it already accounts for the
-  // path that just closed above — and a frame callback queued in a hidden tab
-  // would fire whenever the tab was next looked at, jerking the page then.
-  d.scrollIntoView({ block: "start" });
-}));
 
-document.querySelectorAll("#dicesizes .size").forEach(b =>
-  b.addEventListener("click", () => setDiceTarget(+b.dataset.w)));
-$("rolls").addEventListener("input", updateDice);
 $("dicego").onclick = () => diceGenerate(false);
 $("diceanyway").onclick = () => diceGenerate(true);
+
+// Three jobs, one open at a time: opening one folds the others away so an open
+// panel never has another panel's controls jostling it.
+document.querySelectorAll("#routes .path").forEach(d => d.addEventListener("toggle", () => {
+  if (!d.open) return;
+  document.querySelectorAll("#routes .path").forEach(o => { if (o !== d) o.open = false });
+}));
+
 function setDicePeek(hidden) {
   $("rolls").classList.toggle("shield", hidden);
   $("dicepeek").textContent = hidden ? "Show rolls" : "Hide rolls";
@@ -4333,7 +4432,10 @@ function setDicePeek(hidden) {
 // brings the page back finds them hidden, and they are never erased.
 const diceHide = () => setDicePeek(true);
 $("dicepeek").onclick = () => setDicePeek(!$("rolls").classList.contains("shield"));
-$("diceclr").onclick = () => { $("rolls").value = ""; scrubDice(); updateDice() };
+$("diceclr").onclick = () => {
+  $("rolls").value = ""; scrubDice(); updateDice(); diceField.clear();
+};
+$("gclr").onclick = () => madeField.clear();
 // The rolls are seed material and everything worked out from them is written
 // into the document, so they scrub exactly like the seed does.
 function scrubDice() {
@@ -4603,34 +4705,7 @@ $("incopy").onclick = () => {
 
 const copy = t => navigator.clipboard?.writeText(t).catch(() => {});
 
-// The selector says what you end up with; the buttons say how many words each
-// one draws towards it. They have to move together or the pair stops making
-// sense — CFG is the same table the calculation uses, so they cannot drift.
-function setGenLabels() {
-  const n = +$("genlen").value;
-  $("gen").textContent = `Generate ${n} words`;
-  $("genfull").textContent = `Generate all ${CFG[n].n}`;
-}
-$("genlen").addEventListener("change", setGenLabels);
-setGenLabels();
 
-$("gen").onclick = async () => {
-  if (FRAMED) return;
-  try {
-    $("in").value = randomWords(+$("genlen").value).join(" ");
-  } catch (e) {
-    $("st").className = "status bad";
-    $("st").textContent = "✕  " + e.message + ". Do not use this page to generate a phrase.";
-    return;
-  }
-  if (!await calculate()) return;
-  // generator output is born hidden, complete or not
-  shieldOn();
-  $("inhint").style.display = "block";
-  $("inhint").textContent = `All ${prefix.length} words came from your browser’s random number `
-    + `generator, hidden until you press the eye. Now choose the ending: click a word below, `
-    + `or press Pick at random.`;
-};
 // The footer's word-list fingerprint comes from the same constant the
 // verification compares against, so the two can never drift apart.
 const shortHash = h => h.slice(0, 8) + "…" + h.slice(-8);
@@ -4659,10 +4734,8 @@ $("clr").onclick = () => {
   // the fingerprint sitting in the document, so a page saved after pressing it
   // still carried them.
   shieldReset();
-  scrubDerived();
+  scrubFinish();
   $("in").value = "";
-  $("rolls").value = "";
-  updateDice();
 };
 addEventListener("online", netBadge);
 addEventListener("offline", netBadge);
@@ -4677,6 +4750,8 @@ addEventListener("pageshow", e => {
   if (!e.persisted) return;
   qrHide();
   if ($("in").value.trim()) shieldOn();
+  if (madeField.value()) madeField.hide();
+  if (diceField.value()) diceField.hide();
   if (diceRolls().length) diceHide();
 });
 
@@ -4693,6 +4768,8 @@ qrHide();
 scrubDerived();
 if ($("in").value.trim()) shieldOn();
 else shieldReset();
+if (madeField.value()) madeField.hide();
+if (diceField.value()) diceField.hide();
 if (diceRolls().length) diceHide();
 setDiceTarget(12);
 updateMeter();
