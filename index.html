@@ -1082,7 +1082,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.9 · RUNS OFFLINE</div>
+    <div class="r">v1.7.10 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4105,9 +4105,12 @@ $("genfull").onclick = async () => {
 /* ---- dice --------------------------------------------------------- */
 // A die has six faces, which is not a power of two, so rolls cannot be mapped
 // to bits without either bias or throwing draws away. Hashing the digits
-// sidesteps both and is what Coldcard and Ian Coleman's tool do, so the same
-// rolls reproduce the same seed on a hardware wallet — the whole point of
-// rolling them by hand. Note what hashing does NOT do: it spreads the
+// sidesteps both, and SHA-256 of the ASCII digits is the common convention, so
+// a wallet that derives dice entropy the same way reproduces the same seed from
+// the same rolls, which is the whole point of rolling them by hand. Do not name
+// a particular wallet here, in the README or in release notes: this is a claim
+// about a convention, and it has not been confirmed against hardware the way
+// the SeedQR one was. Note what hashing does NOT do: it spreads the
 // randomness over 256 bits without adding any. Fifty rolls carry 129 bits
 // whether they are hashed or not, which is why the longer sizes stay shut
 // until the rolls are actually there.

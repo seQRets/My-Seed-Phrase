@@ -32,8 +32,8 @@ Path 2 (dice): choose a target size, type rolls, and the ladder unlocks as the
 rolls arrive — 50/62/75/87/100 rolls for 12/15/18/21/24 words, being
 ceil(bits / log2 6). The button always offers the largest size the rolls
 justify and never the size merely asked for. Rolls are hashed (SHA-256 of the
-ASCII digits, the Coldcard / Ian Coleman convention, so the same rolls
-reproduce the same seed on a hardware wallet), the leading bytes become the
+ASCII digits, the common dice-entropy convention, so a wallet deriving it the
+same way reproduces the same seed), the leading bytes become the
 entropy, and entropyToWords() appends the checksum. THERE IS NO ENDING TO PICK
 in this flow and never should be: the rolls supply every entropy bit, so the
 last word is already determined. Offering the endings card here would overwrite
@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.9.
+   shasum block. Current release: v1.7.10.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -157,6 +157,14 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    "Verify this page" sits inside step 5 of the six steps, where the
    instruction to press it is, with its results card directly under the steps
    rather than below the seed card.
+9b. Never name a particular hardware wallet in user-facing copy, in the README,
+    or in release notes for the dice route. The only permitted framing is that
+    support for dice entropy in wallets is an incentive for many people to roll
+    their own. Describe SHA-256-of-the-digits as the common convention, never as
+    a named product's, and state interoperability conditionally ("a wallet that
+    derives it the same way") because it has NOT been confirmed against
+    hardware. The SeedQR wallet list in the README is the exception: it predates
+    this and rests on the real-device test in Standing items.
 10. Candidate list reads top-to-bottom then left-to-right (CSS columns:9rem,
    not a grid). No horizontal overflow 320–1440px. Tooltips are pinned to the
    viewport below 560px: the bubble is nearly screen-width and its trigger

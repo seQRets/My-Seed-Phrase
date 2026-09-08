@@ -61,11 +61,13 @@ rolls looks stronger than it is.
 | 24 words | 100 | 258.5 bits |
 
 A die has six faces, which is not a power of two, so rolls cannot be mapped to
-bits without either bias or discarding draws. The digits are hashed instead —
-`SHA-256` of the ASCII rolls, the convention Coldcard and Ian Coleman's tool
-use, so the same rolls reproduce the same seed on a hardware wallet. The leading
-bytes become the entropy and the checksum is appended as the standard
-specifies. Note what hashing does *not* do: it spreads the randomness over 256
+bits without either bias or discarding draws. The digits are hashed instead:
+`SHA-256` of the ASCII rolls, which is the common convention for dice entropy.
+The leading bytes become the entropy and the checksum is appended as the
+standard specifies. A wallet that derives entropy from dice the same way will
+reproduce the same seed from the same rolls, and that some hardware wallets can
+import a seed from dice at all is the reason many people want to roll their
+own. Note what hashing does *not* do: it spreads the randomness over 256
 bits without adding any. Fifty rolls carry 129 bits whether hashed or not,
 which is exactly why the longer sizes stay shut until the rolls are there.
 
