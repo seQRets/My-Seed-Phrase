@@ -29,6 +29,8 @@
     --shadow:0 1px 2px rgba(27,24,20,.04),0 8px 24px rgba(27,24,20,.05);
     --sans:-apple-system,system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;
+    --display:'Avenir Next','Avenir','Nunito Sans','Segoe UI Variable Display',
+      'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;
     /* One type scale, shared with the sister app at mypassphrase.app so the two
        read as one family. It governs TEXT. Three things stay outside it and are
        meant to: the clamp() headings, which are fluid by design; relative em on
@@ -79,8 +81,8 @@
      verify.js checks against this copy so the two cannot drift apart. */
   .kicker .mark{width:30px;height:30px;flex:none;display:block}
   .kicker .label{font-size:var(--fs-xs);font-weight:700;letter-spacing:.32em;color:var(--accent-ink)}
-  h1{font-size:clamp(2.1rem,5.5vw,3.5rem);font-weight:800;letter-spacing:-.02em;
-     line-height:1.04;margin-bottom:1rem}
+  h1{font-family:var(--display);font-size:clamp(2.1rem,5.5vw,3.5rem);font-weight:800;
+     letter-spacing:-.02em;line-height:1.04;margin-bottom:1rem}
   h1 em{color:var(--accent-ink);font-style:normal}
   .dek{font-size:clamp(1rem,2vw,1.2rem);color:var(--muted);max-width:44rem;line-height:1.45}
   .dek b{color:var(--ink)}
@@ -1086,7 +1088,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· BIP-39 CHECKSUM CALCULATOR</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.7.6 · RUNS OFFLINE</div>
+    <div class="r">v1.7.7 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
