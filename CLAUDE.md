@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.10.
+   shasum block. Current release: v1.7.11.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -298,8 +298,11 @@ runs on your machine at push time. Read the diff on that file like any other.
   Its contact rides on seqrets.app, which must stay registered for the same
   reason. Same season: seqrets.com (held by DropCatch, expires 2 Aug 2027)
   may drop — ~$59 backorder if wanted.
-- Sister app: seQRets/Passphrase at mypassphrase.app (footer links to it);
-  consider a reciprocal link there.
+- Sister app: seQRets/My-Passphrase at mypassphrase.app (renamed from
+  seQRets/Passphrase; the old slug 301s). Reciprocal linking is DONE, verified
+  in both files on 8 Sep 2026: this footer links to https://mypassphrase.app and
+  that footer links to https://myseedphrase.app. Do not add another — verify.js
+  asserts exactly FOUR outbound links here, so a second one fails the harness.
 - Real-device test DONE (2 Sep 2026): a generated SeedQR was scanned by a
   hardware wallet, imported, and the master fingerprint shown on-device matched
   the one on the page. The end-to-end claim the whole SeedQR feature rests on

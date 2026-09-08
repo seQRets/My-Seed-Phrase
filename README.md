@@ -142,7 +142,7 @@ device. The QR opens in a modal, blurred until deliberately
 revealed (a QR is readable by any camera in the room, not just the one you
 mean), and the drawing is wiped when the modal closes. QR encoding is
 `kazuhikoarase/qrcode-generator` (MIT), embedded verbatim — the same embed the
-sister project [seQRets/Passphrase](https://github.com/seQRets/Passphrase)
+sister project [seQRets/My-Passphrase](https://github.com/seQRets/My-Passphrase)
 uses. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED.
 
 Click any candidate to assemble the full phrase, or **Pick at random** to have
