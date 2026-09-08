@@ -91,7 +91,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.7.8.
+   shasum block. Current release: v1.7.9.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
