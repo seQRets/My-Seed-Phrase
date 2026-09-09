@@ -989,8 +989,17 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <p>Each throw of a six-sided die is one of six equally likely results, and the app
         collects enough of them to decide every word: 50 throws for a 12-word seed, 100 for a
         24-word one, with a running count so you know when you have enough. Nothing is drawn
-        from the browser. Your throws decide all of the words, including the last one, which
-        also carries the check that makes a wallet accept the phrase.</p>
+        from the browser.</p>
+        <p><b>You are not throwing words. You are throwing the randomness underneath them.</b>
+        A 12-word seed is 128 yes-or-no answers, plus four more worked out from those, and
+        50 throws is just enough to cover the 128. The app reads the words off that string,
+        eleven answers to a word. So the last word is not left over for you to choose the way
+        it is in the panel below, where you bring your own eleven words and seven answers are
+        still unspoken for. Here its first seven came from your throws like every other word,
+        and the four that finish it are worked out from the 128 you already threw. Nothing is
+        left free, so there is nothing to pick. You can check that for yourself: drop the last
+        word, paste the other eleven into the panel below, and the word your throws produced
+        will be one of the 128 endings it lists.</p>
         <p>The same throws always make the same seed. That is the point of doing it this way:
         a hardware wallet given those same throws produces the same words. That has been
         checked on a real device, not just worked out on paper, and it lets you check this
@@ -1129,7 +1138,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· MAKE OR FINISH A BIP-39 SEED</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.8.1 · RUNS OFFLINE</div>
+    <div class="r">v1.8.2 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">

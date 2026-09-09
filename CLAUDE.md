@@ -45,6 +45,20 @@ last word is already determined. Offering the endings card here would overwrite
 the last 7 bits with browser randomness and destroy both reproducibility and
 the reason someone chose dice. assessRolls() reads the rolls before they are
 hashed — see invariant 13.
+   The dice Q&A must keep EXPLAINING this, not just asserting it. Two readers in
+   a row hit the same wall: panel 3 teaches that the last word is not a free
+   choice, so "all 12 came from your dice" reads as a contradiction. The
+   resolution is that dice throw the randomness UNDERNEATH the words, not the
+   words: 128 answers, then 4 more worked out from them, read off eleven to a
+   word. Never reduce that back to the bare claim.
+   Do NOT add an 11-word stop to the dice ladder, however it is dressed up. It
+   sounds helpful and it costs: the last 7 answers stop coming from the dice
+   (hand-picked they are guessable; picked at random they come from the very
+   generator the roller was avoiding), and the throws alone no longer reproduce
+   the seed, which is the wallet cross-check the route exists for. The safe
+   version of the same curiosity needs no feature and is now in the Q&A: drop
+   the last word, paste the other eleven into panel 3, and the dice word is one
+   of the 128 it lists.
 
 ## Architecture
 
@@ -96,7 +110,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.8.1.
+   shasum block. Current release: v1.8.2.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -271,7 +285,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 69 checks: drives real Chrome headless, checks
+    node verify.js            # 71 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,
@@ -371,5 +385,7 @@ and the candidate chips (14px, index 11px), where a monospace grid has to stay
 predictable — those are what invariant 9 measures at 320px, so moving them means
 re-running the layout checks and expecting them to matter.
 
-Local preview: .claude/launch.json defines "checksum" (python3 http.server on
-port 8899).
+Local preview: .claude/launch.json defines "seedphrase" (python3 http.server on
+port 8899, bound to 127.0.0.1). The file is gitignored, so a fresh clone does
+not have it — recreate it before previewing. The sister app uses "passphrase"
+on 8734, so both can run at once.
