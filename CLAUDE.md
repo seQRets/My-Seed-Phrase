@@ -300,10 +300,23 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 Page self-test must read 15 of 15 (file:// and http).
 Release: bump the footer version → commit → push → poll Pages build FOR THAT
 COMMIT (not just "built") → live hash == local → tag with hash in message →
-gh release create vX.Y.Z index.html#myseedphrase.html --notes-file … (the asset is
-named for the app; the repo file stays index.html because Pages serves it at
-the domain root) → re-download asset +
-fresh-clone verify.js.
+gh release create → re-download asset + fresh-clone verify.js.
+
+The asset must be NAMED myseedphrase.html, because both download links point at
+releases/latest/download/myseedphrase.html. The repo file stays index.html,
+since Pages serves it at the domain root. Do NOT try to rename it with gh's
+hash syntax: `index.html#myseedphrase.html` sets the asset's display LABEL and
+leaves the filename as index.html, which 404s both links the moment the release
+becomes "latest". That happened in v1.8.2 and was caught only by fetching the
+link afterwards. Copy the file to a scratch directory under the right name and
+upload that:
+
+    cp index.html "$SCRATCH/myseedphrase.html"
+    gh release create vX.Y.Z "$SCRATCH/myseedphrase.html" --notes-file …
+
+Then fetch releases/latest/download/myseedphrase.html and check it returns 200
+AND hashes to the released file. The live site matching local is not enough:
+these links live on GitHub, not on Pages, and fail independently.
 
 verify.js runs page code through template literals, so a backslash in a regex
 there is eaten by the literal before JS ever sees it: /\s+/ becomes /s+/ and
