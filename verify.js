@@ -1175,6 +1175,61 @@ async function diceChecks(browser, base) {
   chk('every faked rolling pattern is still caught',
       Object.values(r).every(Boolean), JSON.stringify(r));
 
+  // The "keep these numbers secure" warning lives in the dice panel's
+  // subheading. It lived in the roll field's placeholder for a while, and a
+  // placeholder does not scroll: at 390px it was clipped after two lines, so the
+  // warning never reached a phone. The subheading is ordinary text inside the
+  // <summary>, so it cannot be clipped and it is read before the panel opens.
+  r = await p.evaluate(`${HELPERS}
+    const sub = document.querySelector('#dicepath .pathsub');
+    const t = sub ? sub.textContent : '';
+    return {t, seed: /seed/i.test(t),
+            guarded: /secure|reveal|secret|take the wallet/i.test(t),
+            beforeOpening: !!sub && !!sub.closest('summary')};`);
+  chk('the dice panel warns before anything is typed that the numbers reveal the seed',
+      r.seed && r.guarded && r.beforeOpening, r.t);
+
+  // The eye used to appear only once a roll was typed, so the field could not be
+  // hidden before the first number went in. It is offered from the start now,
+  // and typing must not lift a blur already set.
+  r = await p.evaluate(`${HELPERS}
+    const f = $('rolls'); f.value = ''; f.dispatchEvent(new Event('input'));
+    await new Promise(z => setTimeout(z, 50));
+    const eyeWhenEmpty = getComputedStyle($('rollctl')).display !== 'none';
+    if (f.classList.contains('shield')) $('dicepeek').click();
+    $('dicepeek').click();
+    const hiddenFirst = f.classList.contains('shield');
+    f.value = '4312'; f.dispatchEvent(new Event('input'));
+    await new Promise(z => setTimeout(z, 50));
+    const stillHidden = f.classList.contains('shield');
+    $('dicepeek').click(); f.value = ''; f.dispatchEvent(new Event('input'));
+    return {eyeWhenEmpty, hiddenFirst, stillHidden};`);
+  chk('the rolls can be hidden before the first is typed, and stay hidden while typing',
+      r.eyeWhenEmpty && r.hiddenFirst && r.stillHidden, JSON.stringify(r));
+
+  // An emoji is two UTF-16 units. Splitting the input by unit once reported a
+  // single pasted die as two replacement marks. Named whole, or not at all.
+  r = await p.evaluate(`${HELPERS}
+    const f = $('rolls'); f.value = '🎲'; f.dispatchEvent(new Event('input'));
+    await new Promise(z => setTimeout(z, 80));
+    const msg = $('dicebad').textContent;
+    f.value = ''; f.dispatchEvent(new Event('input'));
+    const broken = [...msg].some(c => { const n = c.codePointAt(0);
+      return (n >= 0xD800 && n <= 0xDFFF) || n === 0xFFFD; });
+    return {msg, broken, named: msg.indexOf('🎲') > -1};`);
+  chk('a stray character in the rolls is named whole, not split in half',
+      r.named && !r.broken, r.msg);
+
+  // .dicewarn is shared by the stale, weak-rolls and repeat warnings. Removing
+  // the standing warning box once took the CSS with it and stripped the red off
+  // all three, including the one that gates a faked-roll generate. Nothing else
+  // in the suite noticed.
+  r = await p.evaluate(`${HELPERS}
+    return ['dicestale','diceweak','diceagain'].map(id =>
+      ({id, border: getComputedStyle($(id)).borderTopStyle}));`);
+  chk('the mid-flow dice warnings still look like warnings',
+      r.every(x => x.border === 'solid'), JSON.stringify(r));
+
   // Three panels, three jobs, three fields. The point of the split is that they
   // do not share: each keeps its own controls and its own seed, and pressing
   // Clear in one must leave the other two alone.

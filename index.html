@@ -318,6 +318,10 @@
   /* hugs its sentence rather than stretching the full width — a short warning
      ringed by empty box reads as decoration. max-width keeps it wrapping
      inside the card on a narrow screen instead of overflowing. */
+  /* Still used by the stale, weak-rolls and repeat-generation warnings, which
+     fire mid-flow and must stand out. Only the standing "these numbers are your
+     seed" box stopped using it: that warning moved into the roll field's
+     placeholder, where it is read before the first roll is typed. */
   .dicewarn{display:table;width:fit-content;max-width:100%;
     font-size:var(--fs-sm);color:var(--red-ink);border:1px solid var(--red-ink);
     border-radius:10px;padding:.7rem .8rem;margin-top:1rem;line-height:1.6;
@@ -338,7 +342,10 @@
   #rolls{width:100%;min-height:5rem;padding:.9rem 3.3rem .9rem 1rem;
     border:1px solid var(--fieldline);border-radius:12px;background:var(--field);
     color:var(--ink);font:15px/1.9 var(--mono);letter-spacing:.16em;resize:vertical}
-  #rolls::placeholder{color:var(--dim);letter-spacing:.02em}
+  /* --muted, not the --dim every other placeholder uses: this one carries the
+     "these numbers are your seed" warning, and --dim measures 4.49:1, a hair
+     under the 4.5:1 floor — fine for a hint, not for a warning. */
+  #rolls::placeholder{color:var(--muted);letter-spacing:.02em}
   #rolls:focus{outline:none;border-color:rgba(247,147,26,.6);
     box-shadow:0 0 0 3px var(--glow)}
   #rolls.shield{color:transparent;text-shadow:0 0 .55em var(--muted);caret-color:transparent}
@@ -731,30 +738,27 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         <span class="pathnum">2</span>
         <span class="pathtitle">Roll your own randomness</span>
         <span class="pathsub">The slow route. Your dice decide every word, so you need not take
-          the browser on trust.</span>
+          the browser on trust. <span aria-hidden="true">🎲</span> Roll a six-sided die and
+          type each result below. Keep these numbers secure, as they reveal the seed
+          phrase.</span>
         <span class="pathbtn">Roll</span>
       </summary>
       <div class="pathbody">
 
-    <p class="dicelede">Roll a six-sided die and type each result here.</p>
-    <div class="dicewarn">⚠︎ <b>These numbers are your seed.</b> Anyone who has them
-      can take the wallet.</div>
-
-    <div class="h" style="margin-top:1.6rem">Which seed do you want to end up with?</div>
+    <div class="h">Which seed do you want to end up with?</div>
     <div class="sizes" id="dicesizes">
-      <button class="size on" type="button" data-w="12">12 words<span class="n">50 rolls</span></button>
-      <button class="size" type="button" data-w="15">15 words<span class="n">62 rolls</span></button>
-      <button class="size" type="button" data-w="18">18 words<span class="n">75 rolls</span></button>
-      <button class="size" type="button" data-w="21">21 words<span class="n">87 rolls</span></button>
-      <button class="size" type="button" data-w="24">24 words<span class="n">100 rolls</span></button>
+      <button class="size on" type="button" data-w="12">12 words<span class="n">50+ rolls</span></button>
+      <button class="size" type="button" data-w="15">15 words<span class="n">62+ rolls</span></button>
+      <button class="size" type="button" data-w="18">18 words<span class="n">75+ rolls</span></button>
+      <button class="size" type="button" data-w="21">21 words<span class="n">87+ rolls</span></button>
+      <button class="size" type="button" data-w="24">24 words<span class="n">100+ rolls</span></button>
     </div>
-    <p class="dicelede" id="dicetarget"></p>
 
     <div class="inwrap" id="rollwrap">
       <textarea id="rolls" spellcheck="false" autocomplete="off" autocapitalize="off"
         autocorrect="off" inputmode="numeric"
-        placeholder="type each roll as you go: 4 3 1 2 5 6 …"></textarea>
-      <div class="inctl" id="rollctl" style="display:none">
+        placeholder="Enter your die rolls here. 431256…"></textarea>
+      <div class="inctl" id="rollctl">
         <button class="ictl" id="dicepeek" type="button" aria-label="Hide the rolls" aria-pressed="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
             <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>
@@ -1009,7 +1013,10 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
         threw onto.</p>
         <p>A cheap die is not perfectly fair. If you are unsure about yours, throw more than
         the minimum: a lopsided die tells you less per throw, and the extra throws make up the
-        difference.</p>
+        difference. What extra throws cannot do is make a seed hold more than its length
+        allows: a 12-word seed tops out at 128 yes-or-no answers however many you throw, so
+        100 throws make a 12-word seed no stronger than 50 fair ones. If you want more than
+        that, choose more words.</p>
       </details>
 
       <details>
@@ -1138,7 +1145,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· MAKE OR FINISH A BIP-39 SEED</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.8.2 · RUNS OFFLINE</div>
+    <div class="r">v1.8.3 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4318,9 +4325,8 @@ function diceUnlocked(n) { return Object.keys(DICE).map(Number).filter(w => n >=
 
 function updateDice() {
   const raw = $("rolls").value;
-  $("rollctl").style.display = raw ? "flex" : "none";
   const n = diceRolls().length;
-  const bad = [...new Set(raw.replace(/\s/g, "").split("").filter(c => !"123456".includes(c)))];
+  const bad = [...new Set([...raw.replace(/\s/g, "")].filter(c => !"123456".includes(c)))];
   $("dicebad").style.display = bad.length ? "block" : "none";
   if (bad.length) $("dicebad").textContent = "✕  Dice only show 1 to 6. Remove: " + bad.join(", ");
 
@@ -4381,8 +4387,6 @@ function setDiceTarget(w) {
   diceTarget = w;
   document.querySelectorAll("#dicesizes .size").forEach(b =>
     b.classList.toggle("on", +b.dataset.w === w));
-  $("dicetarget").textContent = `A ${w}-word seed needs ${DICE[w]} rolls. `
-    + (w > 12 ? "The shorter sizes unlock along the way." : "");
   updateDice();
 }
 

@@ -59,6 +59,16 @@ hashed — see invariant 13.
    version of the same curiosity needs no feature and is now in the Q&A: drop
    the last word, paste the other eleven into panel 3, and the dice word is one
    of the 128 it lists.
+   The roll counts on the size buttons are MINIMUMS, shown as "50+ rolls" and
+   so on: 50 is the floor for 12 words, not a number to hit and stop at.
+   Throwing past it is fine, and wise with a doubtful die, because a lopsided
+   die gives less than log2 6 per throw. But extra throws cannot lift a seed
+   past its own length. Twelve words hold 128 bits by format and the page keeps
+   only the first 16 bytes of the hash, so 100 throws make a 12-word seed
+   exactly as strong as 50 fair ones. The owner once believed that 12 words from
+   100 rolls beat 24 words from 100 rolls, which is backwards: 128 bits against
+   256. Never write copy implying more rolls make a given length stronger. The
+   dice Q&A says so, and points anyone wanting more at more words.
 
 ## Architecture
 
@@ -110,7 +120,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
    the file and therefore the hash you publish. It is the only place the
    version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
    English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.8.2.
+   shasum block. Current release: v1.8.3.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -263,6 +273,42 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
     erased, and everything worked out from it scrubbed by scrubDice(). Say so in
     the copy before they start typing, not after — people jot dice results on
     paper as if they were scratch working.
+    The instruction AND that warning live in the dice panel's SUBHEADING (the
+    .pathsub inside its <summary>): "Roll a six-sided die and type each result
+    below. Keep these numbers secure, as they reveal the seed phrase." Two homes
+    were tried first and both failed. A box above the field sat between the
+    instruction and the field, so "type each result here" pointed at nothing.
+    The roll field's PLACEHOLDER looked tidier but a placeholder does not scroll:
+    at 390px it was clipped after two lines, so the warning, which came last,
+    never reached a phone at all. The subheading is ordinary text, so nothing
+    clips it, and being in the <summary> it is read before the panel even opens.
+    No roll count in the instruction: the size buttons already say "50 rolls",
+    and the old "A 12-word seed needs 50 rolls" line only repeated them.
+    The placeholder is now just a format hint, "Enter your die rolls here.
+    431256…", in --muted (--dim measures 4.49:1, a hair under the floor). It
+    still wraps past the field at 320px, as the older, longer one did. Cosmetic,
+    since it carries nothing that matters. The 🎲 sits in the subheading,
+    aria-hidden so a screen reader reads the instruction, not "game die".
+    verify.js asserts the warning is in the subheading and inside the <summary>,
+    matching by MEANING (mentions the seed, and that the numbers need guarding),
+    so a rewording passes and dropping it fails.
+    The roll field's eye is offered from the START, not only once a roll is
+    typed. It used to appear on the first keystroke, so the field could not be
+    hidden before the first number went in, and the owner, looking at an empty
+    field, reasonably concluded there was no blur at all. Typing never touches
+    the blur, so a field hidden first stays hidden while the rolls go in; the
+    placeholder stays crisp under it (#rolls.shield::placeholder). verify.js
+    asserts both.
+    The .dicewarn CSS class is SHARED by the stale, weak-rolls and repeat-
+    generation warnings (#dicestale, #diceweak, #diceagain). Deleting the rule
+    when the standing box went stripped the red off all three, including the one
+    that gates a faked-roll generate, and none of the 71 checks then in the suite
+    noticed. Search a class before deleting its rule. verify.js now asserts all
+    three keep a solid border.
+    Name bad input by CHARACTER, never by UTF-16 unit: an emoji is two units, and
+    split("") reported one pasted die as two replacement marks. Spread the string
+    ([...s]) instead. diceRolls() keeps only ASCII 1-6, so this was only ever the
+    error message, never the entropy.
     assessRolls() is the only place a faked roll can still be caught. Hashing
     whitens completely: "444…" and a real sequence produce output that looks
     equally random, so assess() downstream reports a flawless phrase either way.
@@ -285,7 +331,7 @@ BIP-39-logo.svg (source of the inlined header mark + favicon),
 
 ## How to verify + release
 
-    node verify.js            # 71 checks: drives real Chrome headless, checks
+    node verify.js            # 75 checks: drives real Chrome headless, checks
                               # the page against an INDEPENDENT BIP-39 +
                               # fingerprint implementation, both origins,
                               # layout 320/390/1440, blur semantics,
