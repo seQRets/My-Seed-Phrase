@@ -62,5 +62,8 @@ things that matter are specific.
 
 ## Supported versions
 
-The published page at <https://myseedphrase.app> and the current `main` branch.
-There are no releases or version branches to support.
+The [latest release](https://github.com/seQRets/My-Seed-Phrase/releases/latest),
+the published page at <https://myseedphrase.app> and the current `main` branch;
+the three are the same bytes, and the README's first step is to check that.
+Older releases stay available for download but are not patched: a fix ships as
+a new release with a new checksum.
