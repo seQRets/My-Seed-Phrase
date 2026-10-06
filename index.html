@@ -15,7 +15,7 @@
      though default-src 'none' already covers it: a request to a network is the
      one thing this page must never make, so it is said out loud. -->
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'sha256-Ss04wEppl7WHIhjdNmzOhAS8w5blR8MfgSsrYlZhEUc=' 'sha256-Y3g0YMfsIAIe7KZxEEiRTDMoPSZ8p2Cqvdztl1LVMYI=' 'sha256-F+X1KsXspIy+tPxjxUSeZo5Jz+vWIUdssxYlGny558Q='; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+      content="default-src 'none'; script-src 'sha256-Ss04wEppl7WHIhjdNmzOhAS8w5blR8MfgSsrYlZhEUc=' 'sha256-Y3g0YMfsIAIe7KZxEEiRTDMoPSZ8p2Cqvdztl1LVMYI=' 'sha256-7hmAHj45Xb1VU0cRyTkkZRS02IPvbwyFh+d8wyrMdNw='; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="description" content="Make a BIP-39 seed phrase from your browser's randomness or your own dice rolls, or find every valid final word for words you already have. One self-contained file that works offline, never touches the internet, SeedQR export.">
 <title>My Seed Phrase</title>
 <!-- The same mark as the header, inline. A data: URI is not a fetch, so this adds
@@ -4303,8 +4303,9 @@ function resultField(p) {
     copy(api.value());
     el("hint").style.display = "block";
     el("hint").textContent = "⚠︎ Copied. The clipboard can be read by any program running on "
-      + "this computer, and a Mac will pass it to your iPhone and iPad. For a seed that will "
-      + "hold real money, write it down by hand instead.";
+      + "this computer, and a Mac will pass it to your iPhone and iPad. If you stay on this "
+      + "page and copy nothing else, it is cleared after 60 seconds; the page never reads it. "
+      + "For a seed that will hold real money, write it down by hand instead.";
   };
   el("qr").onclick = () => openSeedQR(api.value());
   return api;
@@ -4809,11 +4810,35 @@ $("incopy").onclick = () => {
   copy($("in").value.trim());
   $("inhint").style.display = "block";
   $("inhint").textContent = "⚠︎ Copied. The clipboard can be read by any program running on "
-    + "this computer, and a Mac will pass it to your iPhone and iPad. For a seed that will "
-    + "hold real money, write it down by hand instead.";
+    + "this computer, and a Mac will pass it to your iPhone and iPad. If you stay on this "
+    + "page and copy nothing else, it is cleared after 60 seconds; the page never reads it. "
+    + "For a seed that will hold real money, write it down by hand instead.";
 };
 
-const copy = t => navigator.clipboard?.writeText(t).catch(() => {});
+// Copy, then clear the clipboard a minute later without ever reading it. A
+// copied seed outlives the tab in the clipboard; clearing limits that. But
+// reading the clipboard first, to check it is still ours, needs the
+// clipboard-read permission, which browsers surface as a prompt a minute after
+// the copy with no visible cause — alarming on a page like this. So: if the
+// window has stayed focused and nothing else was copied or cut from it since
+// our write, the clipboard can only hold what we put there and overwriting it
+// is safe. If either happened, leave it alone; it may be something of yours.
+let clipTimer = null, clipStale = false;
+window.addEventListener("blur", () => { clipStale = true; });
+document.addEventListener("copy", () => { clipStale = true; });
+document.addEventListener("cut", () => { clipStale = true; });
+const copy = t => {
+  if (!t) return;
+  navigator.clipboard?.writeText(t).then(() => {
+    clipStale = false;
+    if (clipTimer) clearTimeout(clipTimer);
+    clipTimer = setTimeout(() => {
+      clipTimer = null;
+      if (clipStale) return;              // may be yours now, not ours to clear
+      navigator.clipboard?.writeText("").catch(() => {});
+    }, 60000);
+  }).catch(() => {});
+};
 
 
 // The footer's word-list fingerprint comes from the same constant the
