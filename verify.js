@@ -1119,6 +1119,63 @@ async function guardChecks(browser, base) {
   await p.close();
 }
 
+async function finishChecks(browser, base) {
+  console.log('\n--- checking a phrase you already have ---');
+  const p = await openPage(browser, base + '/index.html');
+  // Independent of the page: Node's PBKDF2 with the BIP-39 salt rule
+  // ("mnemonic" + NFKD passphrase), HMAC, secp256k1 via ECDH, RIPEMD-160.
+  const nodeFpPass = (mnemonic, pass) => {
+    const seed = crypto.pbkdf2Sync(mnemonic.normalize('NFKD'), 'mnemonic' + pass.normalize('NFKD'), 2048, 64, 'sha512');
+    const I = crypto.createHmac('sha512', 'Bitcoin seed').update(seed).digest();
+    const e = crypto.createECDH('secp256k1'); e.setPrivateKey(I.slice(0, 32));
+    const sha = crypto.createHash('sha256').update(e.getPublicKey(null, 'compressed')).digest();
+    return crypto.createHash('ripemd160').update(sha).digest().slice(0, 4).toString('hex');
+  };
+  const A12 = [...Array(11).fill('abandon'), 'about'].join(' ');
+  let r = await p.evaluate(`${HELPERS}
+    $('finishpath').open = true; $('clr').click();
+    const out = {};
+    // 1. a complete, valid phrase: checked, fingerprinted, QR offered, no endings
+    $('in').value = ${JSON.stringify(A12)}; $('go').click();
+    if(!await wait(()=>/valid 12-word/i.test($('st').textContent) && /^[0-9a-f]{8}$/.test($('infpv').textContent), 10000)) return {err:'valid phrase timeout: '+$('st').textContent};
+    out.valid = { st: $('st').textContent, ok: $('in').classList.contains('okseed'), fp: $('infpv').textContent,
+                  qr: $('inqr').style.display !== 'none', grid: $('out').style.display, chips: document.querySelectorAll('#grid .w').length };
+    // 2. the passphrase changes the wallet, so it changes the fingerprint — live
+    $('inpass').value = 'TREZOR'; $('inpass').dispatchEvent(new Event('input'));
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('infpv').textContent) && $('infpv').textContent !== out.valid.fp, 10000)) return {err:'passphrase fp timeout'};
+    out.passFp = $('infpv').textContent;
+    // 3. the modal shows the same fingerprint, passphrase included
+    $('inqr').click();
+    if(!await wait(()=>/^[0-9a-f]{8}$/.test($('qrfp').textContent), 10000)) return {err:'qr fp timeout'};
+    out.qrFp = $('qrfp').textContent; $('qrclose').click();
+    // 4. a wrong last word: refused, and the endings that WOULD fit are offered
+    $('inpass').value = ''; $('inpass').dispatchEvent(new Event('input'));
+    $('in').value = ${JSON.stringify(A12.replace(/about$/, 'zoo'))}; $('go').click();
+    if(!await wait(()=>/not a valid 12-word/i.test($('st').textContent), 10000)) return {err:'invalid phrase timeout: '+$('st').textContent};
+    await new Promise(r=>setTimeout(r,100));
+    out.bad = { st: $('st').textContent, bad: $('in').classList.contains('badseed'), note: $('invalidnote').textContent,
+                qr: $('inqr').style.display, grid: $('out').style.display, chips: [...document.querySelectorAll('#grid .w span:first-child')].map(e=>e.textContent),
+                lbl: $('outlbl').textContent };
+    // 5. the wrong count is still refused, with the new wording
+    $('in').value = 'abandon abandon abandon'; $('go').click(); await new Promise(r=>setTimeout(r,100));
+    out.count = $('st').textContent;
+    // 6. Clear wipes the passphrase with the rest
+    $('inpass').value = 'left behind'; $('clr').click(); out.passAfterClear = $('inpass').value;
+    return out;`);
+  chk('a complete, valid phrase is checked: green, fingerprinted, QR offered, no endings list',
+      !r.err && /valid 12-word/i.test(r.valid.st) && r.valid.ok && r.valid.fp === '73c5da0a' && r.valid.qr
+      && r.valid.grid === 'none' && r.valid.chips === 0, r.err || JSON.stringify(r.valid));
+  chk('a BIP-39 passphrase changes the fingerprint, matching an independent derivation (TREZOR)',
+      !r.err && r.passFp === nodeFpPass(A12, 'TREZOR') && r.passFp !== '73c5da0a', r.err || `${r.passFp} vs ${nodeFpPass(A12, 'TREZOR')}`);
+  chk('the SeedQR modal shows the passphrase-aware fingerprint too', !r.err && r.qrFp === r.passFp, r.err || r.qrFp);
+  chk('a wrong last word is refused, and the 128 endings that would fit are offered, "about" among them',
+      !r.err && r.bad.bad && /checksum does not match/.test(r.bad.st) && /does not complete/.test(r.bad.note) && r.bad.qr === 'none'
+      && r.bad.grid === 'block' && r.bad.chips.length === 128 && r.bad.chips.includes('about'), r.err || JSON.stringify({ ...r.bad, chips: r.bad.chips.length }));
+  chk('a count that is neither complete nor one short is still refused', !r.err && /complete phrase of 12/.test(r.count), r.err || r.count);
+  chk('Clear wipes the passphrase with the panel', !r.err && r.passAfterClear === '', r.err || r.passAfterClear);
+  await p.close();
+}
+
 async function diceChecks(browser, base) {
   console.log('\n--- rolling your own randomness ---');
   const p = await openPage(browser, base + '/index.html');
@@ -1538,6 +1595,7 @@ async function calibrate(browser, fileUrl) {
     await pageChecks(browser, fileUrl, `http://localhost:${PORT}/`);
     await guardChecks(browser, `http://localhost:${PORT}`);
     await diceChecks(browser, `http://localhost:${PORT}`);
+    await finishChecks(browser, `http://localhost:${PORT}`);
     if (process.argv.includes('--calibrate')) await calibrate(browser, fileUrl);
   } finally {
     browser.proc.kill();

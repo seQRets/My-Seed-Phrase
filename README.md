@@ -29,6 +29,15 @@ it returns every ending that produces a valid phrase.
 | 21 | 20 | 7 | 16 |
 | 24 | 23 | 8 | 8 |
 
+Give it a **complete** phrase instead and it checks it: a correct checksum gets
+a green border, the master fingerprint and the SeedQR; a wrong one is named,
+together with the endings that *would* have completed the words before it. If
+the wallet uses a BIP-39 passphrase, type it in the field under the box and the
+fingerprint follows it (the standard's rule: salt `"mnemonic" + passphrase`,
+both NFKD-normalized), so the eight characters can be compared against the
+device. `verify.js` holds that to an independent derivation in Node, using the
+standard's `TREZOR` test passphrase.
+
 **Generate complete seed** produces a wallet-ready phrase in one press: it
 draws 11, 14, 17, 20 or 23 words from the browser's random number generator,
 the one built for security work (`crypto.getRandomValues`), works out every
@@ -294,7 +303,10 @@ Honest limits, none of which are fixable in a web page:
 - **Your clipboard.** Copying a phrase makes it readable by every program running
   on your computer. Apps that keep a clipboard history save their own copy to
   disk, and a Mac passes the clipboard to your iPhone and iPad. The page warns
-  you at the point of use. Write it down by hand.
+  you at the point of use, and clears the clipboard 60 seconds after a copy if
+  you have stayed on the page and copied nothing else in between — without ever
+  reading it, since that would need a permission prompt. A clipboard manager
+  will already have taken its copy by then. Write it down by hand.
 - **Browser extensions.** Nothing a web page can do keeps an extension out. Any
   extension allowed to run on a page can read a generated phrase straight off it.
 - **Memory.** A web page cannot reliably erase what it has held. The phrase stays
