@@ -1,0 +1,109 @@
+name: Release
+
+# Pushing a tag vX.Y.Z publishes a GitHub release carrying index.html under the
+# name both download links point at — releases/latest/download/myseedphrase.html
+# — plus SHA256SUMS.txt, with the hash in the release notes. This is the
+# "release" half of CLAUDE.md's checklist, done by a machine:
+#
+#   * the asset is the exact tagged file; the job refuses if SHA256SUMS.txt
+#     does not match it, so a release can never state a hash the file fails;
+#   * it is uploaded under the right NAME, by copying it, not with gh's
+#     `file#label` syntax, which only sets the display label and 404'd both
+#     download links in v1.8.2;
+#   * the footer's version string must equal the tag, so the three things a
+#     release bumps (tag, hash, in-page string) cannot drift;
+#   * afterwards it fetches releases/latest/download/myseedphrase.html and
+#     checks it hashes to the released file, because those links live on
+#     GitHub, not on Pages, and fail independently.
+#
+# Release notes: docs/releases/<tag>.md if it exists, then the hash block.
+# The Pages build for the tagged commit is still worth watching by hand, as
+# the checklist says; this job does not deploy.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write      # to create the release and upload its assets
+      id-token: write      # to sign the provenance attestation (Sigstore)
+      attestations: write  # to store it against the repository
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+
+      - name: Pins and sums are current for the tagged commit
+        run: node scripts/update-csp-hashes.mjs --check
+
+      - name: The footer version string equals the tag
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! grep -q "<div class=\"r\">$TAG · RUNS OFFLINE</div>" index.html; then
+            echo "::error::index.html footer does not read '$TAG · RUNS OFFLINE'. Bump the in-page version first (CLAUDE.md invariant 6)."
+            grep -o '<div class="r">v[^<]*</div>' index.html || true
+            exit 1
+          fi
+
+      - name: Stage the asset under its download name and verify it
+        run: |
+          mkdir -p dist
+          cp index.html dist/myseedphrase.html
+          cp SHA256SUMS.txt dist/SHA256SUMS.txt
+          cd dist
+          # SHA256SUMS.txt names index.html; check the renamed copy against the same line.
+          want=$(awk '{print $1}' SHA256SUMS.txt)
+          got=$(sha256sum myseedphrase.html | cut -d' ' -f1)
+          [ "$want" = "$got" ] || { echo "::error::SHA256SUMS.txt ($want) does not match index.html ($got)"; exit 1; }
+          echo "SHA256=$got" >> "$GITHUB_ENV"
+
+      - name: Write the release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          {
+            if [ -f "docs/releases/$TAG.md" ]; then cat "docs/releases/$TAG.md"; echo; fi
+            echo "## Verify your download"
+            echo
+            echo '```'
+            echo "$SHA256  myseedphrase.html"
+            echo '```'
+            echo
+            echo 'macOS: `shasum -a 256 ~/Downloads/myseedphrase.html` · Linux: `sha256sum ~/Downloads/myseedphrase.html` · Windows: `Get-FileHash $HOME\Downloads\myseedphrase.html -Algorithm SHA256`'
+            echo
+            echo 'If the value differs, stop. Do not open the file.'
+          } > notes.md
+
+      # Provenance: SHA256SUMS.txt travels in the same repository as the page,
+      # so whoever could change one could change the other (the README says
+      # so). This signs the asset through Sigstore with the identity of THIS
+      # workflow run, which the repository alone cannot forge. Anyone verifies:
+      #     gh attestation verify ~/Downloads/myseedphrase.html -R seQRets/My-Seed-Phrase
+      - name: Attest the asset's provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/myseedphrase.html
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/myseedphrase.html dist/SHA256SUMS.txt \
+            --title "$TAG" --notes-file notes.md --verify-tag
+
+      - name: The latest-download link serves the released bytes
+        run: |
+          sleep 15
+          got=$(curl -sL "https://github.com/${{ github.repository }}/releases/latest/download/myseedphrase.html" | sha256sum | cut -d' ' -f1)
+          [ "$got" = "$SHA256" ] || { echo "::error::releases/latest/download/myseedphrase.html hashes to $got, expected $SHA256"; exit 1; }

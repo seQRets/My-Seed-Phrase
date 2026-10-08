@@ -421,6 +421,17 @@ needs, once:
 
     git config core.hooksPath .githooks
 
+The hook is the fast local gate; CI is the one nobody can forget to enable.
+.github/workflows/verify.yml runs update-csp-hashes.mjs --check and verify.js
+in headless Chrome on every push and pull request. .github/workflows/release.yml
+does the release half of the checklist on a vX.Y.Z tag push: refuses unless the
+footer string equals the tag and SHA256SUMS.txt matches index.html, uploads the
+file under the asset NAME myseedphrase.html (a copy, never gh's file#label
+syntax), writes the hash block into the notes (after docs/releases/<tag>.md if
+present), then fetches releases/latest/download/myseedphrase.html and checks it
+hashes to the released file. Watching the Pages build for the tagged commit is
+still by hand; the release job does not deploy.
+
 Check `git config core.hooksPath` on a machine before trusting that the hook is
 live. The flip side of tracking it: a git pull can now change a script that
 runs on your machine at push time. Read the diff on that file like any other.
