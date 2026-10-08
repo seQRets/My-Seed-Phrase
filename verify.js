@@ -1393,6 +1393,13 @@ async function diceChecks(browser, base) {
   // 8. the heading survives a phone. A fixed-width button beside a flexible
   // title collapsed it to one word per line at 320px, which overflowed nothing
   // and so passed every check there was.
+  // The bar is "not one word per line", measured against the heading's own
+  // word count rather than a fixed line count, because the lines depend on
+  // the font the machine resolves for system-ui: San Francisco on a Mac fits
+  // "Finish a seed you already have" in 3 lines at 320px, DejaVu Sans on a
+  // Linux runner takes 4, and a fixed `lines <= 3` failed in CI for that
+  // reason alone while the regression it guards against (6 lines) would still
+  // be caught either way.
   await p.setViewport(320, 700);
   r = await p.evaluate(`${HELPERS}
     $('makepath').open = false; $('dicepath').open = false;
@@ -1400,8 +1407,10 @@ async function diceChecks(browser, base) {
     return [...document.querySelectorAll('.pathtitle')].map(e => {
       const s = getComputedStyle(e), h = e.getBoundingClientRect().height;
       return { w: Math.round(e.getBoundingClientRect().width),
+               words: e.textContent.trim().split(/[ ]+/).length,
                lines: Math.round(h / parseFloat(s.lineHeight || 20)) } });`);
-  chk('path headings still read on a 320px screen', r.every(t => t.w >= 120 && t.lines <= 3),
+  chk('path headings still read on a 320px screen',
+      r.every(t => t.w >= 120 && t.lines < t.words),
       JSON.stringify(r));
   await p.setViewport(1280, 900);
 
