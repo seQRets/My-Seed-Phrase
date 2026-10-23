@@ -294,10 +294,11 @@ Honest limits, none of which are fixable in a web page:
 - **Your clipboard.** Copying a phrase makes it readable by every program running
   on your computer. Apps that keep a clipboard history save their own copy to
   disk, and a Mac passes the clipboard to your iPhone and iPad. The page warns
-  you at the point of use, and clears the clipboard 60 seconds after a copy if
-  you have stayed on the page and copied nothing else in between — without ever
-  reading it, since that would need a permission prompt. A clipboard manager
-  will already have taken its copy by then. Write it down by hand.
+  you at the point of use. In Chrome and Edge it also clears the clipboard 60
+  seconds after a copy, if you have stayed on the page and copied nothing else in
+  between, without ever reading it, since reading would need a permission prompt.
+  Safari does not let a page do that, and a clipboard manager will already have
+  taken its copy by then anyway. Write it down by hand.
 - **Browser extensions.** Nothing a web page can do keeps an extension out. Any
   extension allowed to run on a page can read a generated phrase straight off it.
 - **Memory.** A web page cannot reliably erase what it has held. The phrase stays
@@ -354,8 +355,8 @@ change one could change the other. The section below, and step 5 in the guide
 above, are what speak to the contents.
 
 One check does not share that weakness. Each release is signed, through
-[Sigstore](https://www.sigstore.dev/), by the GitHub Actions run that built it
-— a signature the repository's contents cannot forge — and the signature is
+[Sigstore](https://www.sigstore.dev/), by the GitHub Actions run that built it,
+a signature the repository's contents cannot forge, and the signature is
 stored against this repository. With the [GitHub CLI](https://cli.github.com/):
 
 ```bash
@@ -527,7 +528,7 @@ node scripts/update-csp-hashes.mjs --check
 ```
 
 writes nothing and reports whether the pins and the sums are current, which is
-the form for a hook or a CI step — and is what `.github/workflows/verify.yml`
+the form for a hook or a CI step, and is what `.github/workflows/verify.yml`
 runs, together with `verify.js`, on every push and pull request. `verify.js` asserts the same thing
 independently — it recomputes the hashes itself rather than trusting the script
 that wrote them — so a forgotten run fails the suite, and with it the pre-push

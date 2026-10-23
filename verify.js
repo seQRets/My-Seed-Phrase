@@ -246,7 +246,11 @@ function sourceChecks() {
   // rather than read from scripts/update-csp-hashes.mjs: the harness judges the
   // page, not the tool that wrote it. A stale pin does not degrade the page, it
   // stops that block dead, so this must fail loudly.
-  const inlineScripts = [...SRC.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+  // The same rule as the pin script: a "<script>" inside an HTML comment is
+  // not a block, and counting it would pin bytes the browser never runs.
+  const htmlComments = [...SRC.matchAll(/<!--[\s\S]*?-->/g)].map(m => [m.index, m.index + m[0].length]);
+  const inlineScripts = [...SRC.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
+    .filter(m => !htmlComments.some(([a, b]) => m.index >= a && m.index < b));
   const pins = [...csp.matchAll(/'sha256-([A-Za-z0-9+/=]+)'/g)].map(m => m[1]);
   const want = inlineScripts.map(m =>
     crypto.createHash('sha256').update(m[2], 'utf8').digest('base64'));

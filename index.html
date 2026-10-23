@@ -15,7 +15,7 @@
      though default-src 'none' already covers it: a request to a network is the
      one thing this page must never make, so it is said out loud. -->
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; script-src 'sha256-Ss04wEppl7WHIhjdNmzOhAS8w5blR8MfgSsrYlZhEUc=' 'sha256-Y3g0YMfsIAIe7KZxEEiRTDMoPSZ8p2Cqvdztl1LVMYI=' 'sha256-7hmAHj45Xb1VU0cRyTkkZRS02IPvbwyFh+d8wyrMdNw='; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+      content="default-src 'none'; script-src 'sha256-Ss04wEppl7WHIhjdNmzOhAS8w5blR8MfgSsrYlZhEUc=' 'sha256-Y3g0YMfsIAIe7KZxEEiRTDMoPSZ8p2Cqvdztl1LVMYI=' 'sha256-xwX757PC+abTXE1kplidlcmSmKZKwPuvK/STa19pEPQ='; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="description" content="Make a BIP-39 seed phrase from your browser's randomness or your own dice rolls, or find every valid final word for words you already have. One self-contained file that works offline, never touches the internet, SeedQR export.">
 <title>My Seed Phrase</title>
 <!-- The same mark as the header, inline. A data: URI is not a fetch, so this adds
@@ -1220,7 +1220,7 @@ try{if(window.top!==window.self)document.documentElement.setAttribute("data-fram
     <div class="l">MY SEED PHRASE <span>· MAKE OR FINISH A BIP-39 SEED</span></div>
     <!-- bump the version on every release: it lets a saved copy be compared
          against the repo's releases -->
-    <div class="r">v1.8.5 · RUNS OFFLINE</div>
+    <div class="r">v1.8.6 · RUNS OFFLINE</div>
     <details class="creds">
       <summary>Credits</summary>
       <div class="prov">
@@ -4309,9 +4309,10 @@ function resultField(p) {
     copy(api.value());
     el("hint").style.display = "block";
     el("hint").textContent = "⚠︎ Copied. The clipboard can be read by any program running on "
-      + "this computer, and a Mac will pass it to your iPhone and iPad. If you stay on this "
-      + "page and copy nothing else, it is cleared after 60 seconds; the page never reads it. "
-      + "For a seed that will hold real money, write it down by hand instead.";
+      + "this computer, and a Mac will pass it to your iPhone and iPad. In Chrome and Edge it "
+      + "is cleared after 60 seconds if you stay on this page and copy nothing else; Safari "
+      + "does not allow that. For a seed that will hold real money, write it down by hand "
+      + "instead.";
   };
   el("qr").onclick = () => openSeedQR(api.value());
   return api;
@@ -4816,9 +4817,10 @@ $("incopy").onclick = () => {
   copy($("in").value.trim());
   $("inhint").style.display = "block";
   $("inhint").textContent = "⚠︎ Copied. The clipboard can be read by any program running on "
-    + "this computer, and a Mac will pass it to your iPhone and iPad. If you stay on this "
-    + "page and copy nothing else, it is cleared after 60 seconds; the page never reads it. "
-    + "For a seed that will hold real money, write it down by hand instead.";
+    + "this computer, and a Mac will pass it to your iPhone and iPad. In Chrome and Edge it "
+    + "is cleared after 60 seconds if you stay on this page and copy nothing else; Safari "
+    + "does not allow that. For a seed that will hold real money, write it down by hand "
+    + "instead.";
 };
 
 // Copy, then clear the clipboard a minute later without ever reading it. A
@@ -4829,6 +4831,9 @@ $("incopy").onclick = () => {
 // window has stayed focused and nothing else was copied or cut from it since
 // our write, the clipboard can only hold what we put there and overwriting it
 // is safe. If either happened, leave it alone; it may be something of yours.
+// Only Chromium lets a page write to the clipboard outside a click. Safari
+// refuses the clear (the catch swallows it), so the copy under the box names
+// the browsers that do it rather than promising it everywhere.
 let clipTimer = null, clipStale = false;
 window.addEventListener("blur", () => { clipStale = true; });
 document.addEventListener("copy", () => { clipStale = true; });

@@ -80,7 +80,12 @@ Other files: README.md, SECURITY.md, LICENSE, CNAME, .nojekyll,
 BIP-39-logo.svg (source of the inlined header mark + favicon),
 .well-known/security.txt, .gitignore, CLAUDE.md, .githooks/pre-push,
 SHA256SUMS.txt (generated) and scripts/update-csp-hashes.mjs, which generates
-it. The script is plain Node with no dependencies, the same rule as the page.
+it. The script is plain Node with no dependencies, the same rule as the page,
+and is SHARED VERBATIM with My Passphrase: verify.yml compares it with the
+sister's copy, so a fix lands in both or CI says so. Since v1.8.6 (the external
+review by @deanrie, PRs #1-#4): .github/workflows/verify.yml, deploy.yml and
+release.yml, .github/dependabot.yml, and docs/releases/vX.Y.Z.md, one notes
+file per release.
 
 ## Invariants — do not break
 
@@ -145,9 +150,10 @@ it. The script is plain Node with no dependencies, the same rule as the page.
    OFFLINE</div>), so a release bumps THREE things: the tag, the published
    hash, and that in-page string. Bump the string FIRST — changing it changes
    the file and therefore the hash you publish. It is the only place the
-   version appears. Notes: a one-line summary, "## New"/"## Fixed" in plain
-   English, "still passes 15 of 15", then "## Verify your download" with the
-   shasum block. Current release: v1.8.5.
+   version appears. Notes live in docs/releases/vX.Y.Z.md: a one-line
+   summary, "## New"/"## Fixed" in plain English, "still passes 15 of 15".
+   release.yml appends "## Verify your download" with the hash itself, so the
+   notes never carry a hand-typed one. Current release: v1.8.6.
 7. Blur rule: anything the generator produces is born hidden (complete AND
    partial seeds); typed words are born visible, but typing NEVER lifts a blur
    already engaged — a box hidden when typing began stays hidden, so a
@@ -281,6 +287,13 @@ it. The script is plain Node with no dependencies, the same rule as the page.
     for a second press on "Save it anyway". That button is deliberately NOT
     focused, so a reflexive second Enter cannot save the file. Closing the
     modal forgets the acknowledgement, like every other reveal here.
+    Since v1.8.6 a copy is cleared from the clipboard 60 seconds later, if the
+    window kept focus and nothing else was copied (the page never reads the
+    clipboard: that needs a permission prompt). Only Chromium lets a page write
+    to the clipboard outside a click; Safari refuses the clear silently. So the
+    copy names "Chrome and Edge" and says Safari does not. Never promise the
+    clear unconditionally. Confirmed in headless Chrome with the timer
+    shortened: cleared when you stay, left alone after a copy or a blur.
 13. The page refuses to be framed. frame-ancestors only works as a real HTTP
     header and GitHub Pages cannot send one, so a pre-paint script checks
     window.top !== window.self, fails closed, and withholds the tool. The
@@ -373,9 +386,20 @@ it. The script is plain Node with no dependencies, the same rule as the page.
 
 Page self-test must read 15 of 15 (file:// and http).
 Release: bump the footer version → run node scripts/update-csp-hashes.mjs →
-commit → push → poll Pages build FOR THAT COMMIT (not just "built") → live hash
-== local → tag with hash in message → gh release create → re-download asset +
-fresh-clone verify.js.
+write docs/releases/vX.Y.Z.md → commit → push → watch CI and the deploy FOR
+THAT COMMIT (not just "built") → live hash == local → annotated tag vX.Y.Z with
+the hash in its message → push the tag → release.yml publishes → fetch
+releases/latest/download/myseedphrase.html (200 AND the hash) and run
+`gh attestation verify` on it.
+
+Since v1.8.6 the RELEASE IS MADE BY .github/workflows/release.yml, not by hand.
+Never run `gh release create` for a tag the workflow will see: whichever runs
+second fails, and a hand-made release carries no provenance attestation. The
+workflow refuses unless the footer string equals the tag and SHA256SUMS.txt
+matches index.html, uploads index.html as myseedphrase.html plus
+SHA256SUMS.txt, signs the asset through Sigstore, and checks the latest-download
+link afterwards. The manual commands below are the fallback for a broken
+workflow only.
 
 The script runs AFTER the version bump and before the commit, every time. The
 bump changes index.html, so it changes the file's own hash and SHA256SUMS.txt
@@ -390,8 +414,8 @@ since Pages serves it at the domain root. Do NOT try to rename it with gh's
 hash syntax: `index.html#myseedphrase.html` sets the asset's display LABEL and
 leaves the filename as index.html, which 404s both links the moment the release
 becomes "latest". That happened in v1.8.2 and was caught only by fetching the
-link afterwards. Copy the file to a scratch directory under the right name and
-upload that:
+link afterwards. release.yml copies it under the right name; by hand, as a
+fallback, copy the file to a scratch directory under that name and upload it:
 
     cp index.html "$SCRATCH/myseedphrase.html"
     gh release create vX.Y.Z "$SCRATCH/myseedphrase.html" --notes-file …
@@ -410,8 +434,8 @@ checks failing; six were the harness lagging behind new features, one was a
 real bug that reached users.
 
 .githooks/pre-push runs verify.js and refuses the push if it fails, but only
-when the push carries index.html or verify.js — a docs-only push is not worth
-90 seconds. A tag push checks everything the tag carries, so cutting a release
+when the push carries index.html, verify.js, SHA256SUMS.txt or scripts/ — a
+docs-only push is not worth 90 seconds. A tag push checks everything the tag carries, so cutting a release
 always verifies. Override with --no-verify. It checks the files on disk, not
 the commit being pushed, and says so when the working tree is dirty.
 
@@ -431,6 +455,18 @@ syntax), writes the hash block into the notes (after docs/releases/<tag>.md if
 present), then fetches releases/latest/download/myseedphrase.html and checks it
 hashes to the released file. Watching the Pages build for the tagged commit is
 still by hand; the release job does not deploy.
+   verify.yml runs on pull_request, NOT pull_request_target: a fork's PR gets a
+read-only token and no secrets, so a hostile PR cannot reach anything. Never
+change that trigger. Every action is pinned to a full commit SHA, and GitHub
+resolves a SHA anywhere in an action's fork network, so an "imposter" commit can
+look official. When Dependabot bumps a pin, check the new SHA is the one the
+official repository's tag points at before merging; that is a trust decision,
+not housekeeping.
+   deploy.yml publishes only index.html, CNAME, .nojekyll, security.txt and the
+logo, and only after the checks pass on the same commit. It does nothing useful
+until Settings → Pages → Source is "GitHub Actions"; while the source is still
+the branch, Pages deploys main on every push as before and the deploy job fails
+harmlessly. Pending the owner's go-ahead, as of v1.8.6.
 
 Check `git config core.hooksPath` on a machine before trusting that the hook is
 live. The flip side of tracking it: a git pull can now change a script that
