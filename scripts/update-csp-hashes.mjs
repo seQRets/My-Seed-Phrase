@@ -2,6 +2,10 @@
 /* Recompute the SHA-256 pins for index.html's inline scripts, rewrite the CSP
    meta tag in place, and regenerate SHA256SUMS.txt.
  *
+ * SHARED VERBATIM between seQRets/My-Seed-Phrase and seQRets/My-Passphrase:
+ * the two pages follow one rule set, and each repository's CI fails if its
+ * copy differs from the sister's. Fix a bug here, then copy the file across.
+ *
  * RUN THIS AFTER ANY EDIT TO index.html. The page pins each inline <script> by
  * hash instead of allowing 'unsafe-inline', so a single changed character
  * inside a script block makes the browser refuse to run that block. The failure
@@ -35,7 +39,13 @@ const src   = bytes.toString('utf8');
 if (!Buffer.from(src, 'utf8').equals(bytes)) die('index.html is not valid UTF-8');
 
 /* ---- inline scripts ---------------------------------------------------- */
-const blocks = [...src.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)];
+// An HTML comment hides everything up to its "-->", so a literal "<script>"
+// written inside one is not a block. Treating it as one would hash the wrong
+// bytes and pin a hash the browser never matches — and the page would quietly
+// do nothing, which is exactly the failure this script exists to prevent.
+const comments = [...src.matchAll(/<!--[\s\S]*?-->/g)].map(m => [m.index, m.index + m[0].length]);
+const inComment = i => comments.some(([a, b]) => i >= a && i < b);
+const blocks = [...src.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(b => !inComment(b.index));
 if (!blocks.length) die('no inline <script> block found');
 for (const b of blocks) {
   if (/\bsrc\s*=/i.test(b[1])) die(`a <script> at line ${lineOf(src, b.index)} has a src attribute; this page loads nothing`);
@@ -94,5 +104,5 @@ if (CHECK) {
   if (sumsStale) writeFileSync(SUMS, sums);
   console.log(`\nCSP script-src   ${cspStale ? 'rewritten' : 'already current'}`);
   console.log(`SHA256SUMS.txt   ${sumsStale ? 'rewritten' : 'already current'}  ${pageHash}`);
-  if (cspStale) console.log('\nindex.html changed, so it needs a release: see CLAUDE.md invariant 6.');
+  if (cspStale) console.log('\nindex.html changed, so it needs a release with the new hash.');
 }
