@@ -294,7 +294,10 @@ Honest limits, none of which are fixable in a web page:
 - **Your clipboard.** Copying a phrase makes it readable by every program running
   on your computer. Apps that keep a clipboard history save their own copy to
   disk, and a Mac passes the clipboard to your iPhone and iPad. The page warns
-  you at the point of use. Write it down by hand.
+  you at the point of use, and clears the clipboard 60 seconds after a copy if
+  you have stayed on the page and copied nothing else in between — without ever
+  reading it, since that would need a permission prompt. A clipboard manager
+  will already have taken its copy by then. Write it down by hand.
 - **Browser extensions.** Nothing a web page can do keeps an extension out. Any
   extension allowed to run on a page can read a generated phrase straight off it.
 - **Memory.** A web page cannot reliably erase what it has held. The phrase stays
