@@ -59,8 +59,28 @@ jobs:
           cp .well-known/security.txt _site/.well-known/
           cp BIP-39-logo.svg _site/ 2>/dev/null || true
           ls -laR _site
+      # include-hidden-files: from v4 this action leaves out every file or
+      # folder whose name starts with a dot, and .well-known is one. Without it
+      # the deploy published no security.txt, and still reported success.
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: _site
+          include-hidden-files: true
       - id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      # A deploy reports success whatever it published, so ask the site itself:
+      # this commit's page, byte for byte, and the security contact beside it.
+      - name: The live site serves this commit's page and its security.txt
+        env:
+          URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          base="${URL%/}"
+          want=$(sha256sum _site/index.html | cut -d' ' -f1)
+          for i in $(seq 1 20); do
+            got=$(curl -fsSL "$base/?v=$GITHUB_SHA" | sha256sum | cut -d' ' -f1)
+            sec=$(curl -s -o /dev/null -w '%{http_code}' "$base/.well-known/security.txt?v=$GITHUB_SHA")
+            if [ "$got" = "$want" ] && [ "$sec" = 200 ]; then echo "live: page $got, security.txt $sec"; exit 0; fi
+            echo "waiting: page ${got:0:12}, security.txt $sec"; sleep 15
+          done
+          echo "::error::$base does not serve this commit's page and its security.txt"
+          exit 1

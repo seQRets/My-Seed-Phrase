@@ -463,10 +463,16 @@ look official. When Dependabot bumps a pin, check the new SHA is the one the
 official repository's tag points at before merging; that is a trust decision,
 not housekeeping.
    deploy.yml publishes only index.html, CNAME, .nojekyll, security.txt and the
-logo, and only after the checks pass on the same commit. It does nothing useful
-until Settings → Pages → Source is "GitHub Actions"; while the source is still
-the branch, Pages deploys main on every push as before and the deploy job fails
-harmlessly. Pending the owner's go-ahead, as of v1.8.6.
+logo, and only after the checks pass on the same commit; then it fetches the
+live page and security.txt and fails unless both are there. Two things the
+review got wrong, found on the v1.8.6 push. (1) The deploy does NOT fail while
+Settings → Pages → Source is still the branch: it succeeds and goes live, so
+both deploys run on every push and whichever finishes last is what the site
+serves. Switching the source to "GitHub Actions" ends the race. (2) From v4,
+upload-pages-artifact leaves out every dot-file and dot-folder unless
+include-hidden-files is true, and .well-known is one: the first deploy served
+no security.txt while reporting success. My Passphrase has the same gap (its
+security.txt 404'd after v1.18.0); fix it there in its own session.
 
 Check `git config core.hooksPath` on a machine before trusting that the hook is
 live. The flip side of tracking it: a git pull can now change a script that
