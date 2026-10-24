@@ -79,7 +79,11 @@ async function launch(bin, port = 9333) {
     '--disable-component-update', '--disable-sync', '--no-pings',
     '--window-size=1280,900', 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'] });
   let err = ''; proc.stderr.on('data', d => err += d);
-  for (let i = 0; i < 100; i++) {
+  // 30 s, not 10: on a cold CI runner Chrome can take longer than ten seconds
+  // to open its debugging port, and since deploys are gated on this harness, a
+  // slow start would block one for nothing. A Chrome that never starts still
+  // fails, just later.
+  for (let i = 0; i < 300; i++) {
     try {
       const v = await fetch(`http://127.0.0.1:${port}/json/version`).then(r => r.json());
       return { proc, wsUrl: v.webSocketDebuggerUrl, version: v.Browser };

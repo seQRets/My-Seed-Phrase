@@ -102,8 +102,16 @@ jobs:
           gh release create "$TAG" dist/myseedphrase.html dist/SHA256SUMS.txt \
             --title "$TAG" --notes-file notes.md --verify-tag
 
+      # "latest" moves to a new release a little after it is created. Checked
+      # once after 15 s, v1.8.6's run still saw v1.8.5 and failed a good
+      # release, so ask for up to five minutes before calling the link wrong.
       - name: The latest-download link serves the released bytes
         run: |
-          sleep 15
-          got=$(curl -sL "https://github.com/${{ github.repository }}/releases/latest/download/myseedphrase.html" | sha256sum | cut -d' ' -f1)
-          [ "$got" = "$SHA256" ] || { echo "::error::releases/latest/download/myseedphrase.html hashes to $got, expected $SHA256"; exit 1; }
+          url="https://github.com/${{ github.repository }}/releases/latest/download/myseedphrase.html"
+          for i in $(seq 1 20); do
+            got=$(curl -sL "$url" | sha256sum | cut -d' ' -f1)
+            if [ "$got" = "$SHA256" ]; then echo "latest-download link serves $got"; exit 0; fi
+            echo "waiting: the link still serves ${got:0:12}"; sleep 15
+          done
+          echo "::error::releases/latest/download/myseedphrase.html hashes to $got, expected $SHA256"
+          exit 1
