@@ -468,7 +468,9 @@ live page and security.txt and fails unless both are there. Two things the
 review got wrong, found on the v1.8.6 push. (1) The deploy does NOT fail while
 Settings → Pages → Source is still the branch: it succeeds and goes live, so
 both deploys run on every push and whichever finishes last is what the site
-serves. Switching the source to "GitHub Actions" ends the race. (2) From v4,
+serves. Switching the source to "GitHub Actions" ends the race. DONE 24 Oct
+2026: the source is "GitHub Actions" and the branch build no longer runs; the
+first Actions-only deploy (bbc2430) served v1.8.6 and security.txt. (2) From v4,
 upload-pages-artifact leaves out every dot-file and dot-folder unless
 include-hidden-files is true, and .well-known is one: the first deploy served
 no security.txt while reporting success. My Passphrase has the same gap (its
